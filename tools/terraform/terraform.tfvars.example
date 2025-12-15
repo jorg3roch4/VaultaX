@@ -1,0 +1,47 @@
+# =============================================================================
+# VaultaX - Terraform Variables Example
+# =============================================================================
+# Copy this file to terraform.tfvars and customize the values.
+# DO NOT commit terraform.tfvars to source control!
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Console Sample Secrets
+# -----------------------------------------------------------------------------
+sample_username = "admin"
+sample_password = "your-secure-password"
+sample_api_key  = "your-api-key"
+
+# -----------------------------------------------------------------------------
+# Development Environment
+# -----------------------------------------------------------------------------
+dev_db_connection_string = "Server=dev-db.example.com;Database=MyApp;User Id=myuser;Password=MyPass123;TrustServerCertificate=True"
+dev_db_password          = "MyPass123"
+
+dev_rabbitmq_host     = "rabbitmq.dev.example.com"
+dev_rabbitmq_username = "dev_user"
+dev_rabbitmq_password = "RabbitDevPass123"
+dev_rabbitmq_vhost    = "/development"
+
+dev_jwt_secret   = "your-development-jwt-secret-at-least-32-characters"
+dev_jwt_issuer   = "MyApp-Dev"
+dev_jwt_audience = "MyApp-API"
+
+# -----------------------------------------------------------------------------
+# Production Environment (Optional)
+# -----------------------------------------------------------------------------
+# Set to true to create production secrets
+create_production_secrets = false
+
+# Uncomment and fill in for production:
+# prod_db_connection_string = "Server=prod-db.example.com;Database=MyApp;User Id=produser;Password=ProdPass123;Encrypt=True"
+# prod_db_password          = "ProdPass123"
+#
+# prod_rabbitmq_host     = "rabbitmq.prod.example.com"
+# prod_rabbitmq_username = "prod_user"
+# prod_rabbitmq_password = "RabbitProdPass123"
+# prod_rabbitmq_vhost    = "/production"
+#
+# prod_jwt_secret   = "your-production-jwt-secret-must-be-very-secure"
+# prod_jwt_issuer   = "MyApp-Prod"
+# prod_jwt_audience = "MyApp-API"
