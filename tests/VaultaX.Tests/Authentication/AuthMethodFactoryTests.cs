@@ -105,8 +105,8 @@ public class AuthMethodFactoryTests
         var options = new AuthenticationOptions
         {
             Method = "Custom",
-            CustomAuthPath = "auth/custom/login",
-            CustomAuthEnvVar = "CUSTOM_AUTH_TOKEN"
+            CustomPath = "auth/custom/login",
+            CustomValue = "CUSTOM_AUTH_TOKEN"
         };
 
         // Act
@@ -123,7 +123,7 @@ public class AuthMethodFactoryTests
         var options = new AuthenticationOptions
         {
             Method = "Token",
-            TokenEnvVar = "VAULT_TOKEN"
+            Token = "VAULT_TOKEN"
         };
 
         // Act
@@ -141,7 +141,7 @@ public class AuthMethodFactoryTests
         {
             Method = "AppRole",
             RoleId = "my-role-id",
-            SecretIdEnvVar = "VAULT_SECRET_ID",
+            SecretId = "VAULT_SECRET_ID",
             MountPath = "custom-approle"
         };
 
@@ -159,7 +159,7 @@ public class AuthMethodFactoryTests
         var options = new AuthenticationOptions
         {
             Method = "Kubernetes",
-            KubernetesRole = "my-k8s-role",
+            Role = "my-k8s-role",
             MountPath = "kubernetes"
         };
 
@@ -178,35 +178,35 @@ public class AuthMethodFactoryTests
         switch (method.ToLowerInvariant())
         {
             case "token":
-                options.TokenEnvVar = "VAULT_TOKEN";
+                options.Token = "VAULT_TOKEN";
                 break;
             case "approle":
                 options.RoleId = "role-id";
-                options.SecretIdEnvVar = "VAULT_SECRET_ID";
+                options.SecretId = "VAULT_SECRET_ID";
                 break;
             case "kubernetes":
             case "k8s":
-                options.KubernetesRole = "k8s-role";
+                options.Role = "k8s-role";
                 break;
             case "ldap":
             case "userpass":
             case "radius":
                 options.Username = "user";
-                options.PasswordEnvVar = "VAULT_PASSWORD";
+                options.Password = "VAULT_PASSWORD";
                 break;
             case "jwt":
             case "oidc":
-                options.JwtTokenEnvVar = "VAULT_JWT_TOKEN";
-                options.JwtRole = "jwt-role";
+                options.Token = "VAULT_JWT_TOKEN";
+                options.Role = "jwt-role";
                 break;
             case "aws":
-                options.AwsRole = "cloud-role";
+                options.Role = "cloud-role";
                 break;
             case "azure":
-                options.AzureRole = "cloud-role";
+                options.Role = "cloud-role";
                 break;
             case "github":
-                options.GitHubTokenEnvVar = "GITHUB_TOKEN";
+                options.Token = "GITHUB_TOKEN";
                 break;
             case "certificate":
             case "cert":

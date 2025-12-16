@@ -19,7 +19,7 @@ dotnet add package VaultaX
     "Address": "http://localhost:8200",
     "Authentication": {
       "Method": "Token",
-      "TokenEnvVar": "VAULT_TOKEN"
+      "Token": "VAULT_TOKEN"
     },
     "Mappings": [
       {
@@ -131,7 +131,7 @@ Si estás desarrollando en un entorno donde las variables de entorno no funciona
     "Address": "http://localhost:8200",
     "Authentication": {
       "Method": "Token",
-      "TokenEnvVar": "static:root"
+      "Token": "static:root"
     }
   }
 }

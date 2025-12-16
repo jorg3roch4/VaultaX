@@ -148,7 +148,7 @@ Ver [Autenticación](authentication.md) para documentación completa de todos lo
       "Method": "AppRole",
       "MountPath": "auth/approle",
       "RoleId": "abc123...",
-      "SecretIdEnvVar": "VAULT_SECRET_ID"
+      "SecretId": "VAULT_SECRET_ID"
     }
   }
 }
@@ -348,7 +348,7 @@ Mapeo de claves del secreto a claves de configuración.
     "Authentication": {
       "Method": "AppRole",
       "RoleId": "env:VAULT_ROLE_ID",
-      "SecretIdEnvVar": "VAULT_SECRET_ID"
+      "SecretId": "VAULT_SECRET_ID"
     },
     "Reload": {
       "Enabled": true,
@@ -383,7 +383,7 @@ export VAULT_TOKEN=hvs.xxx...
 
 ## Resolución de Credenciales
 
-Las propiedades de autenticación que terminan en `EnvVar` (como `TokenEnvVar`, `SecretIdEnvVar`, `PasswordEnvVar`) soportan tres formatos de resolución:
+Las propiedades de autenticación sensibles (`Token`, `SecretId`, `Password`, `CertificatePassword`, `CustomValue`) soportan tres formatos de resolución:
 
 ### 1. Variable de entorno (por defecto)
 
@@ -393,7 +393,7 @@ El valor se interpreta como nombre de variable de entorno:
 {
   "VaultaX": {
     "Authentication": {
-      "TokenEnvVar": "VAULT_TOKEN"
+      "Token": "VAULT_TOKEN"
     }
   }
 }
@@ -411,7 +411,7 @@ Usa el prefijo `env:` para ser explícito sobre la fuente:
 {
   "VaultaX": {
     "Authentication": {
-      "TokenEnvVar": "env:MY_CUSTOM_TOKEN_VAR"
+      "Token": "env:MY_CUSTOM_TOKEN_VAR"
     }
   }
 }
@@ -428,7 +428,7 @@ Usa el prefijo `static:` para especificar el valor directamente:
   "VaultaX": {
     "Authentication": {
       "Method": "Token",
-      "TokenEnvVar": "static:root"
+      "Token": "static:root"
     }
   }
 }

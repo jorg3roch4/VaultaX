@@ -78,7 +78,7 @@ public sealed class AuthenticationOptions
 {
     /// <summary>
     /// Authentication method to use.
-    /// Supported values: AppRole, Token, Kubernetes, Ldap, Jwt, Aws, Azure, GitHub, Certificate, UserPass, Custom
+    /// Supported values: AppRole, Token, Kubernetes, Ldap, Jwt, Aws, Azure, GitHub, Certificate, UserPass, RADIUS, Custom
     /// </summary>
     public string Method { get; set; } = "AppRole";
 
@@ -89,6 +89,35 @@ public sealed class AuthenticationOptions
     /// </summary>
     public string MountPath { get; set; } = string.Empty;
 
+    // ==================== Common Properties ====================
+
+    /// <summary>
+    /// Token or credential for authentication.
+    /// Used by: Token, JWT, GitHub methods.
+    /// Supports: environment variable name, "env:VAR_NAME", or "static:value" (dev only).
+    /// Default: "VAULT_TOKEN"
+    /// </summary>
+    public string Token { get; set; } = "VAULT_TOKEN";
+
+    /// <summary>
+    /// Role name for authentication.
+    /// Used by: Kubernetes, JWT, AWS, Azure, Certificate methods.
+    /// </summary>
+    public string? Role { get; set; }
+
+    /// <summary>
+    /// Username for authentication.
+    /// Used by: LDAP, UserPass, RADIUS methods.
+    /// </summary>
+    public string? Username { get; set; }
+
+    /// <summary>
+    /// Password for authentication.
+    /// Used by: LDAP, UserPass, RADIUS methods.
+    /// Supports: environment variable name, "env:VAR_NAME", or "static:value" (dev only).
+    /// </summary>
+    public string? Password { get; set; }
+
     // ==================== AppRole Authentication ====================
 
     /// <summary>
@@ -97,26 +126,13 @@ public sealed class AuthenticationOptions
     public string? RoleId { get; set; }
 
     /// <summary>
-    /// [AppRole] Environment variable name containing the Secret ID.
+    /// [AppRole] Secret ID for AppRole authentication.
+    /// Supports: environment variable name, "env:VAR_NAME", or "static:value" (dev only).
     /// Default: "VAULT_SECRET_ID"
-    /// The Secret ID should NEVER be stored in configuration files.
     /// </summary>
-    public string SecretIdEnvVar { get; set; } = "VAULT_SECRET_ID";
-
-    // ==================== Token Authentication ====================
-
-    /// <summary>
-    /// [Token] Environment variable name containing the Vault token.
-    /// Default: "VAULT_TOKEN"
-    /// </summary>
-    public string TokenEnvVar { get; set; } = "VAULT_TOKEN";
+    public string SecretId { get; set; } = "VAULT_SECRET_ID";
 
     // ==================== Kubernetes Authentication ====================
-
-    /// <summary>
-    /// [Kubernetes] The Vault role to authenticate as.
-    /// </summary>
-    public string? KubernetesRole { get; set; }
 
     /// <summary>
     /// [Kubernetes] Path to the service account token file.
@@ -124,65 +140,24 @@ public sealed class AuthenticationOptions
     /// </summary>
     public string ServiceAccountTokenPath { get; set; } = "/var/run/secrets/kubernetes.io/serviceaccount/token";
 
-    // ==================== LDAP / UserPass Authentication ====================
-
-    /// <summary>
-    /// [LDAP/UserPass] Username for authentication.
-    /// </summary>
-    public string? Username { get; set; }
-
-    /// <summary>
-    /// [LDAP/UserPass] Environment variable name containing the password.
-    /// </summary>
-    public string? PasswordEnvVar { get; set; }
-
-    // ==================== JWT/OIDC Authentication ====================
-
-    /// <summary>
-    /// [JWT/OIDC] The Vault role to authenticate as.
-    /// </summary>
-    public string? JwtRole { get; set; }
-
-    /// <summary>
-    /// [JWT/OIDC] Environment variable name containing the JWT token.
-    /// </summary>
-    public string? JwtTokenEnvVar { get; set; }
-
     // ==================== AWS Authentication ====================
-
-    /// <summary>
-    /// [AWS] The Vault role to authenticate as.
-    /// </summary>
-    public string? AwsRole { get; set; }
 
     /// <summary>
     /// [AWS] AWS region for STS calls.
     /// </summary>
-    public string? AwsRegion { get; set; }
+    public string? Region { get; set; }
 
     /// <summary>
     /// [AWS] Authentication type: "iam" or "ec2". Default: "iam"
     /// </summary>
-    public string AwsAuthType { get; set; } = "iam";
+    public string AuthType { get; set; } = "iam";
 
     // ==================== Azure Authentication ====================
 
     /// <summary>
-    /// [Azure] The Vault role to authenticate as.
-    /// </summary>
-    public string? AzureRole { get; set; }
-
-    /// <summary>
     /// [Azure] The Azure AD resource (audience) for the token.
     /// </summary>
-    public string? AzureResource { get; set; }
-
-    // ==================== GitHub Authentication ====================
-
-    /// <summary>
-    /// [GitHub] Environment variable name containing the GitHub personal access token.
-    /// </summary>
-    public string? GitHubTokenEnvVar { get; set; }
+    public string? Resource { get; set; }
 
     // ==================== Certificate Authentication ====================
 
@@ -192,80 +167,50 @@ public sealed class AuthenticationOptions
     public string? CertificatePath { get; set; }
 
     /// <summary>
-    /// [Certificate] Environment variable name containing the certificate password.
+    /// [Certificate] Password for the certificate file.
+    /// Supports: environment variable name, "env:VAR_NAME", or "static:value" (dev only).
     /// </summary>
-    public string? CertificatePasswordEnvVar { get; set; }
-
-    /// <summary>
-    /// [Certificate] The Vault role to authenticate as.
-    /// </summary>
-    public string? CertificateRole { get; set; }
-
-    // ==================== RADIUS Authentication ====================
-
-    /// <summary>
-    /// [RADIUS] Username for RADIUS authentication.
-    /// </summary>
-    public string? RadiusUsername { get; set; }
-
-    /// <summary>
-    /// [RADIUS] Environment variable name containing the RADIUS password.
-    /// </summary>
-    public string? RadiusPasswordEnvVar { get; set; }
+    public string? CertificatePassword { get; set; }
 
     // ==================== Custom Authentication ====================
 
     /// <summary>
-    /// [Custom] For custom auth methods, the path to call (e.g., "auth/custom/login").
+    /// [Custom] Path for custom auth method (e.g., "auth/custom/login").
     /// </summary>
-    public string? CustomAuthPath { get; set; }
+    public string? CustomPath { get; set; }
 
     /// <summary>
-    /// [Custom] Environment variable name containing the custom auth token or payload.
+    /// [Custom] Value for custom authentication.
+    /// Supports: environment variable name, "env:VAR_NAME", or "static:value" (dev only).
     /// </summary>
-    public string? CustomAuthEnvVar { get; set; }
+    public string? CustomValue { get; set; }
 
     // ==================== Helper Methods ====================
 
     /// <summary>
-    /// Gets the Secret ID from the configured environment variable.
+    /// Gets the Secret ID from the configured source.
     /// </summary>
-    public string? GetSecretId() => GetEnvVar(SecretIdEnvVar);
+    public string? GetSecretId() => GetEnvVar(SecretId);
 
     /// <summary>
-    /// Gets the token from the configured environment variable.
+    /// Gets the token from the configured source.
     /// </summary>
-    public string? GetToken() => GetEnvVar(TokenEnvVar);
+    public string? GetToken() => GetEnvVar(Token);
 
     /// <summary>
-    /// Gets the password from the configured environment variable.
+    /// Gets the password from the configured source.
     /// </summary>
-    public string? GetPassword() => GetEnvVar(PasswordEnvVar);
+    public string? GetPassword() => GetEnvVar(Password);
 
     /// <summary>
-    /// Gets the JWT from the configured environment variable.
+    /// Gets the certificate password from the configured source.
     /// </summary>
-    public string? GetJwtToken() => GetEnvVar(JwtTokenEnvVar);
+    public string? GetCertificatePassword() => GetEnvVar(CertificatePassword);
 
     /// <summary>
-    /// Gets the GitHub token from the configured environment variable.
+    /// Gets the custom auth value from the configured source.
     /// </summary>
-    public string? GetGitHubToken() => GetEnvVar(GitHubTokenEnvVar);
-
-    /// <summary>
-    /// Gets the certificate password from the configured environment variable.
-    /// </summary>
-    public string? GetCertificatePassword() => GetEnvVar(CertificatePasswordEnvVar);
-
-    /// <summary>
-    /// Gets the RADIUS password from the configured environment variable.
-    /// </summary>
-    public string? GetRadiusPassword() => GetEnvVar(RadiusPasswordEnvVar);
-
-    /// <summary>
-    /// Gets the custom auth value from the configured environment variable.
-    /// </summary>
-    public string? GetCustomAuthValue() => GetEnvVar(CustomAuthEnvVar);
+    public string? GetCustomAuthValue() => GetEnvVar(CustomValue);
 
     private static string? GetEnvVar(string? name)
     {

@@ -7,17 +7,25 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Spectre.Console;
 using VaultaX.Abstractions;
+using VaultaX.Configuration;
 using VaultaX.Exceptions;
 using VaultaX.Extensions;
 
 namespace VaultaX.Sample.Console;
 
-/// <summary>
-/// Sample console application demonstrating VaultaX usage for:
-/// 1. Reading secrets from Key-Value engine
-/// 2. Signing data with Transit engine (private key never leaves Vault)
-/// 3. Verifying signatures
-/// </summary>
+// ============================================================================
+// VaultaX Sample Console Application
+// ============================================================================
+// This sample demonstrates VaultaX usage for:
+// 1. Reading secrets from Key-Value engine
+// 2. Signing data with Transit engine (private key never leaves Vault)
+// 3. Verifying signatures
+//
+// TWO CONFIGURATION APPROACHES:
+// - OPTION A: AppSettings (appsettings.json) - Currently active
+// - OPTION B: Fluent API (code) - Comment out Option A and uncomment Option B
+// ============================================================================
+
 internal class Program
 {
     private static async Task<int> Main(string[] args)
@@ -32,10 +40,8 @@ internal class Program
             AnsiConsole.MarkupLine("[green]VaultaX - HashiCorp Vault Integration for .NET[/]");
             AnsiConsole.WriteLine();
 
-            // Build the host with VaultaX configuration
             var host = CreateHostBuilder(args).Build();
 
-            // Run the sample
             using (var scope = host.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
@@ -52,6 +58,11 @@ internal class Program
         }
     }
 
+    // ========================================================================
+    // OPTION A: Configuration via appsettings.json (ACTIVE)
+    // ========================================================================
+    // All configuration is in appsettings.json under the "VaultaX" section.
+    // ========================================================================
     private static IHostBuilder CreateHostBuilder(string[] args) =>
         Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((context, config) =>
@@ -64,10 +75,106 @@ internal class Program
             })
             .ConfigureServices((context, services) =>
             {
-                // Register VaultaX services
-                // This will use configuration from appsettings.json
+                // Register VaultaX services from configuration
                 services.AddVaultaX(context.Configuration);
             });
+
+    // ========================================================================
+    // OPTION B: Configuration via Fluent API (COMMENTED OUT)
+    // ========================================================================
+    // Uncomment this method and comment out Option A to use Fluent API.
+    // ========================================================================
+    /*
+    private static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                config
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .AddEnvironmentVariables();
+            })
+            .ConfigureServices((context, services) =>
+            {
+                // Register VaultaX services with Fluent API
+                services.AddVaultaX(options =>
+                {
+                    options.Enabled = true;
+                    options.Address = "http://localhost:8200";
+                    options.MountPoint = "secret";
+                    options.KvVersion = 2;
+                    options.BasePath = "";
+
+                    // Authentication - Token method (simplest for development)
+                    options.Authentication.Method = "Token";
+                    options.Authentication.Token = "VAULT_TOKEN"; // Reads from env var
+
+                    // Alternative: AppRole (recommended for production)
+                    // options.Authentication.Method = "AppRole";
+                    // options.Authentication.RoleId = "my-role-id";
+                    // options.Authentication.SecretId = "VAULT_SECRET_ID";
+
+                    // Alternative: Kubernetes
+                    // options.Authentication.Method = "Kubernetes";
+                    // options.Authentication.Role = "my-k8s-role";
+
+                    // Alternative: LDAP/UserPass
+                    // options.Authentication.Method = "LDAP";
+                    // options.Authentication.Username = "myuser";
+                    // options.Authentication.Password = "VAULT_LDAP_PASSWORD";
+
+                    // Alternative: JWT
+                    // options.Authentication.Method = "JWT";
+                    // options.Authentication.Role = "my-jwt-role";
+                    // options.Authentication.Token = "JWT_TOKEN";
+
+                    // Alternative: AWS
+                    // options.Authentication.Method = "AWS";
+                    // options.Authentication.Role = "my-aws-role";
+                    // options.Authentication.Region = "us-east-1";
+
+                    // Alternative: Azure
+                    // options.Authentication.Method = "Azure";
+                    // options.Authentication.Role = "my-azure-role";
+                    // options.Authentication.Resource = "https://management.azure.com/";
+
+                    // Alternative: GitHub
+                    // options.Authentication.Method = "GitHub";
+                    // options.Authentication.Token = "GITHUB_TOKEN";
+
+                    // Alternative: Certificate
+                    // options.Authentication.Method = "Certificate";
+                    // options.Authentication.CertificatePath = "/path/to/cert.pfx";
+                    // options.Authentication.CertificatePassword = "CERT_PASSWORD";
+                    // options.Authentication.Role = "my-cert-role";
+
+                    // Alternative: RADIUS
+                    // options.Authentication.Method = "RADIUS";
+                    // options.Authentication.Username = "myuser";
+                    // options.Authentication.Password = "RADIUS_PASSWORD";
+
+                    // Alternative: Custom
+                    // options.Authentication.Method = "Custom";
+                    // options.Authentication.CustomPath = "auth/custom/login";
+                    // options.Authentication.CustomValue = "CUSTOM_AUTH_TOKEN";
+
+                    // Secret mappings (optional for console app)
+                    options.Mappings.Add(new SecretMappingOptions
+                    {
+                        SecretPath = "sample/demo",
+                        Bindings = new()
+                        {
+                            ["username"] = "Sample:Username",
+                            ["password"] = "Sample:Password"
+                        }
+                    });
+
+                    // Token renewal
+                    options.TokenRenewal.Enabled = true;
+                    options.TokenRenewal.CheckIntervalSeconds = 60;
+                });
+            });
+    */
 
     private static async Task RunSampleAsync(IServiceProvider services)
     {
@@ -107,7 +214,6 @@ internal class Program
 
                     try
                     {
-                        // Read secret from Vault
                         var secrets = await kvEngine.ReadAsync(secretPath);
 
                         if (secrets.Count > 0)
@@ -161,7 +267,6 @@ internal class Program
                     AnsiConsole.MarkupLine($"[cyan]Document to sign:[/] [white]{documentData}[/]");
                     AnsiConsole.WriteLine();
 
-                    // Check if key exists
                     ctx.Status("Checking Transit key...");
                     var keyInfo = await transitEngine.GetKeyInfoAsync(keyName);
 
@@ -176,7 +281,6 @@ internal class Program
                     AnsiConsole.MarkupLine($"[green]✓[/] Key exists: [white]{keyInfo.Type}[/] (version {keyInfo.LatestVersion})");
                     AnsiConsole.WriteLine();
 
-                    // Sign the data
                     ctx.Status("Signing data...");
                     var signResponse = await transitEngine.SignAsync(new TransitSignRequest
                     {
@@ -192,7 +296,6 @@ internal class Program
                     AnsiConsole.MarkupLine($"[cyan]Key version used:[/] [white]{signResponse.KeyVersion}[/]");
                     AnsiConsole.WriteLine();
 
-                    // Verify the signature
                     ctx.Status("Verifying signature...");
                     var isValid = await transitEngine.VerifyAsync(new TransitVerifyRequest
                     {
@@ -215,7 +318,6 @@ internal class Program
 
                     AnsiConsole.WriteLine();
 
-                    // Test with tampered data
                     ctx.Status("Testing with tampered data...");
                     var tamperedData = Encoding.UTF8.GetBytes("This document has been tampered!");
                     var tamperedValid = await transitEngine.VerifyAsync(new TransitVerifyRequest
@@ -230,7 +332,6 @@ internal class Program
 
                     AnsiConsole.MarkupLine($"[cyan]Tampered data verification:[/] {(tamperedValid ? "[red]VALID[/]" : "[green]INVALID (as expected)[/]")}");
 
-                    // Additional Transit operations
                     AnsiConsole.WriteLine();
                     var panel = new Panel(
                         "[dim]The Transit engine provides cryptographic operations without exposing private keys.\n" +

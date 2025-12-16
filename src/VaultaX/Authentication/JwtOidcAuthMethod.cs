@@ -39,16 +39,16 @@ public sealed class JwtOidcAuthMethod : AuthMethodBase
     /// <inheritdoc />
     public override IAuthMethodInfo GetAuthMethodInfo()
     {
-        if (string.IsNullOrWhiteSpace(Options.JwtRole))
+        if (string.IsNullOrWhiteSpace(Options.Role))
         {
             throw new VaultaXConfigurationException(
-                "JwtRole is required for JWT authentication.",
-                "VaultaX:Authentication:JwtRole");
+                "Role is required for JWT authentication.",
+                "VaultaX:Authentication:Role");
         }
 
-        var jwt = GetRequiredEnvVar(Options.JwtTokenEnvVar, "JWT Token");
+        var jwt = GetRequiredEnvVar(Options.Token, "JWT Token");
         var mountPath = GetMountPath("jwt");
 
-        return new JWTAuthMethodInfo(mountPath, Options.JwtRole, jwt);
+        return new JWTAuthMethodInfo(mountPath, Options.Role, jwt);
     }
 }

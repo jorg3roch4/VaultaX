@@ -38,7 +38,7 @@ public sealed class GitHubAuthMethod : AuthMethodBase
     /// <inheritdoc />
     public override IAuthMethodInfo GetAuthMethodInfo()
     {
-        var token = GetRequiredEnvVar(Options.GitHubTokenEnvVar, "GitHub Personal Access Token");
+        var token = GetRequiredEnvVar(Options.Token, "GitHub Personal Access Token");
         var mountPath = GetMountPath("github");
 
         return new GitHubAuthMethodInfo(mountPath, token);

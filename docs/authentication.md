@@ -35,7 +35,7 @@ El método más simple. Usa un token de Vault directamente.
   "VaultaX": {
     "Authentication": {
       "Method": "Token",
-      "TokenEnvVar": "VAULT_TOKEN"
+      "Token": "VAULT_TOKEN"
     }
   }
 }
@@ -80,7 +80,7 @@ Método recomendado para aplicaciones y servicios automatizados.
       "Method": "AppRole",
       "MountPath": "auth/approle",
       "RoleId": "abc123-def456-...",
-      "SecretIdEnvVar": "VAULT_SECRET_ID"
+      "SecretId": "VAULT_SECRET_ID"
     }
   }
 }
@@ -148,7 +148,7 @@ Autenticación automática para pods en Kubernetes usando Service Accounts.
     "Authentication": {
       "Method": "Kubernetes",
       "MountPath": "auth/kubernetes",
-      "KubernetesRole": "myapp-role",
+      "Role": "myapp-role",
       "ServiceAccountTokenPath": "/var/run/secrets/kubernetes.io/serviceaccount/token"
     }
   }
@@ -196,7 +196,7 @@ spec:
       - name: myapp
         image: myapp:latest
         env:
-        - name: VaultaX__Authentication__KubernetesRole
+        - name: VaultaX__Authentication__Role
           value: "myapp-role"
 ```
 
@@ -219,7 +219,7 @@ Autenticación contra directorio LDAP/Active Directory.
       "Method": "Ldap",
       "MountPath": "auth/ldap",
       "Username": "serviceaccount",
-      "PasswordEnvVar": "VAULT_LDAP_PASSWORD"
+      "Password": "VAULT_LDAP_PASSWORD"
     }
   }
 }
@@ -272,7 +272,7 @@ Autenticación simple con usuario y contraseña.
       "Method": "UserPass",
       "MountPath": "auth/userpass",
       "Username": "devuser",
-      "PasswordEnvVar": "VAULT_PASSWORD"
+      "Password": "VAULT_PASSWORD"
     }
   }
 }
@@ -308,8 +308,8 @@ Autenticación mediante tokens JWT o integración OIDC.
     "Authentication": {
       "Method": "Jwt",
       "MountPath": "auth/jwt",
-      "JwtRole": "github-actions",
-      "JwtTokenEnvVar": "ACTIONS_ID_TOKEN"
+      "Role": "github-actions",
+      "Token": "ACTIONS_ID_TOKEN"
     }
   }
 }
@@ -371,9 +371,9 @@ Autenticación usando credenciales AWS (IAM o EC2).
     "Authentication": {
       "Method": "Aws",
       "MountPath": "auth/aws",
-      "AwsRole": "myapp-role",
-      "AwsRegion": "us-east-1",
-      "AwsAuthType": "iam"
+      "Role": "myapp-role",
+      "Region": "us-east-1",
+      "AuthType": "iam"
     }
   }
 }
@@ -386,8 +386,8 @@ Autenticación usando credenciales AWS (IAM o EC2).
   "VaultaX": {
     "Authentication": {
       "Method": "Aws",
-      "AwsRole": "myapp-role",
-      "AwsAuthType": "ec2"
+      "Role": "myapp-role",
+      "AuthType": "ec2"
     }
   }
 }
@@ -433,8 +433,8 @@ Autenticación usando Azure Managed Identity.
     "Authentication": {
       "Method": "Azure",
       "MountPath": "auth/azure",
-      "AzureRole": "myapp-role",
-      "AzureResource": "https://management.azure.com/"
+      "Role": "myapp-role",
+      "Resource": "https://management.azure.com/"
     }
   }
 }
@@ -473,7 +473,7 @@ Autenticación usando Personal Access Token de GitHub.
     "Authentication": {
       "Method": "GitHub",
       "MountPath": "auth/github",
-      "GitHubTokenEnvVar": "GITHUB_TOKEN"
+      "Token": "GITHUB_TOKEN"
     }
   }
 }
@@ -516,8 +516,8 @@ Autenticación mediante certificado TLS cliente.
       "Method": "Certificate",
       "MountPath": "auth/cert",
       "CertificatePath": "/etc/ssl/client.pfx",
-      "CertificatePasswordEnvVar": "CERT_PASSWORD",
-      "CertificateRole": "myapp-cert"
+      "CertificatePassword": "CERT_PASSWORD",
+      "Role": "myapp-cert"
     }
   }
 }
@@ -552,8 +552,8 @@ Autenticación contra servidor RADIUS.
     "Authentication": {
       "Method": "Radius",
       "MountPath": "auth/radius",
-      "RadiusUsername": "serviceuser",
-      "RadiusPasswordEnvVar": "RADIUS_PASSWORD"
+      "Username": "serviceuser",
+      "Password": "RADIUS_PASSWORD"
     }
   }
 }
@@ -572,8 +572,8 @@ Para métodos de autenticación personalizados.
   "VaultaX": {
     "Authentication": {
       "Method": "Custom",
-      "CustomAuthPath": "auth/custom/login",
-      "CustomAuthEnvVar": "CUSTOM_AUTH_TOKEN"
+      "CustomPath": "auth/custom/login",
+      "CustomValue": "CUSTOM_AUTH_TOKEN"
     }
   }
 }
@@ -613,7 +613,7 @@ Si el token no es renovable:
 
 ## Resolución de Credenciales
 
-VaultaX soporta tres formatos para especificar credenciales en las propiedades `*EnvVar`:
+VaultaX soporta tres formatos para especificar credenciales en las propiedades sensibles (`Token`, `SecretId`, `Password`, `CertificatePassword`, `CustomValue`):
 
 ### 1. Variable de entorno (por defecto)
 
@@ -622,7 +622,7 @@ El valor se interpreta como nombre de variable de entorno:
 ```json
 {
   "Authentication": {
-    "TokenEnvVar": "VAULT_TOKEN"
+    "Token": "VAULT_TOKEN"
   }
 }
 ```
@@ -638,7 +638,7 @@ Usa el prefijo `env:` para ser explícito:
 ```json
 {
   "Authentication": {
-    "TokenEnvVar": "env:MY_CUSTOM_VAR"
+    "Token": "env:MY_CUSTOM_VAR"
   }
 }
 ```
@@ -657,7 +657,7 @@ Usa el prefijo `static:` para especificar el valor directamente:
 {
   "Authentication": {
     "Method": "Token",
-    "TokenEnvVar": "static:root"
+    "Token": "static:root"
   }
 }
 ```
@@ -667,7 +667,7 @@ Usa el prefijo `static:` para especificar el valor directamente:
   "Authentication": {
     "Method": "AppRole",
     "RoleId": "abc123-def456-...",
-    "SecretIdEnvVar": "static:xyz789-uvw012-..."
+    "SecretId": "static:xyz789-uvw012-..."
   }
 }
 ```
@@ -693,14 +693,14 @@ Usa el prefijo `static:` para especificar el valor directamente:
 // MAL - Nunca en producción
 {
   "Authentication": {
-    "SecretIdEnvVar": "static:abc123..."
+    "SecretId": "static:abc123..."
   }
 }
 
 // BIEN - Usar variables de entorno
 {
   "Authentication": {
-    "SecretIdEnvVar": "VAULT_SECRET_ID"
+    "SecretId": "VAULT_SECRET_ID"
   }
 }
 ```

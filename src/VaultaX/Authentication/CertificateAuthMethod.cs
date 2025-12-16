@@ -55,7 +55,7 @@ public sealed class CertificateAuthMethod : AuthMethodBase
                 "VaultaX:Authentication:CertificatePath");
         }
 
-        var password = GetOptionalEnvVar(Options.CertificatePasswordEnvVar);
+        var password = GetOptionalEnvVar(Options.CertificatePassword);
         var mountPath = GetMountPath("cert");
 
         X509Certificate2 certificate;
@@ -72,6 +72,6 @@ public sealed class CertificateAuthMethod : AuthMethodBase
                 ex);
         }
 
-        return new CertAuthMethodInfo(mountPath, certificate, Options.CertificateRole);
+        return new CertAuthMethodInfo(mountPath, certificate, Options.Role);
     }
 }

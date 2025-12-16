@@ -140,7 +140,7 @@ VaultAuthenticationException: Failed to authenticate with Vault using AppRole: p
      "VaultaX": {
        "Authentication": {
          "Method": "Token",
-         "TokenEnvVar": "static:root"
+         "Token": "static:root"
        }
      }
    }
@@ -387,7 +387,7 @@ Verificar configuración completa:
     "Authentication": {
       "Method": "AppRole",  // Requerido
       "RoleId": "abc123",   // Requerido para AppRole
-      "SecretIdEnvVar": "VAULT_SECRET_ID"  // Requerido para AppRole
+      "SecretId": "VAULT_SECRET_ID"  // Requerido para AppRole
     }
   }
 }

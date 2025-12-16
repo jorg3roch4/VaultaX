@@ -119,8 +119,8 @@ public static class VaultaXOptionsValidator
                 if (string.IsNullOrWhiteSpace(secretId))
                 {
                     throw new VaultaXConfigurationException(
-                        $"Environment variable '{auth.SecretIdEnvVar}' for AppRole SecretId is not set.",
-                        "VaultaX:Authentication:SecretIdEnvVar");
+                        $"SecretId source '{auth.SecretId}' for AppRole is not set or empty.",
+                        "VaultaX:Authentication:SecretId");
                 }
                 break;
 
@@ -129,23 +129,24 @@ public static class VaultaXOptionsValidator
                 if (string.IsNullOrWhiteSpace(token))
                 {
                     throw new VaultaXConfigurationException(
-                        $"Environment variable '{auth.TokenEnvVar}' for Vault Token is not set.",
-                        "VaultaX:Authentication:TokenEnvVar");
+                        $"Token source '{auth.Token}' for Vault Token is not set or empty.",
+                        "VaultaX:Authentication:Token");
                 }
                 break;
 
             case "kubernetes":
             case "k8s":
-                if (string.IsNullOrWhiteSpace(auth.KubernetesRole))
+                if (string.IsNullOrWhiteSpace(auth.Role))
                 {
                     throw new VaultaXConfigurationException(
-                        "VaultaX:Authentication:KubernetesRole is required for Kubernetes authentication.",
-                        "VaultaX:Authentication:KubernetesRole");
+                        "VaultaX:Authentication:Role is required for Kubernetes authentication.",
+                        "VaultaX:Authentication:Role");
                 }
                 break;
 
             case "ldap":
             case "userpass":
+            case "radius":
                 if (string.IsNullOrWhiteSpace(auth.Username))
                 {
                     throw new VaultaXConfigurationException(
@@ -156,39 +157,39 @@ public static class VaultaXOptionsValidator
 
             case "jwt":
             case "oidc":
-                if (string.IsNullOrWhiteSpace(auth.JwtRole))
+                if (string.IsNullOrWhiteSpace(auth.Role))
                 {
                     throw new VaultaXConfigurationException(
-                        "VaultaX:Authentication:JwtRole is required for JWT authentication.",
-                        "VaultaX:Authentication:JwtRole");
+                        "VaultaX:Authentication:Role is required for JWT authentication.",
+                        "VaultaX:Authentication:Role");
                 }
                 break;
 
             case "aws":
-                if (string.IsNullOrWhiteSpace(auth.AwsRole))
+                if (string.IsNullOrWhiteSpace(auth.Role))
                 {
                     throw new VaultaXConfigurationException(
-                        "VaultaX:Authentication:AwsRole is required for AWS authentication.",
-                        "VaultaX:Authentication:AwsRole");
+                        "VaultaX:Authentication:Role is required for AWS authentication.",
+                        "VaultaX:Authentication:Role");
                 }
                 break;
 
             case "azure":
-                if (string.IsNullOrWhiteSpace(auth.AzureRole))
+                if (string.IsNullOrWhiteSpace(auth.Role))
                 {
                     throw new VaultaXConfigurationException(
-                        "VaultaX:Authentication:AzureRole is required for Azure authentication.",
-                        "VaultaX:Authentication:AzureRole");
+                        "VaultaX:Authentication:Role is required for Azure authentication.",
+                        "VaultaX:Authentication:Role");
                 }
                 break;
 
             case "github":
-                var githubToken = auth.GetGitHubToken();
+                var githubToken = auth.GetToken();
                 if (string.IsNullOrWhiteSpace(githubToken))
                 {
                     throw new VaultaXConfigurationException(
-                        $"Environment variable '{auth.GitHubTokenEnvVar}' for GitHub token is not set.",
-                        "VaultaX:Authentication:GitHubTokenEnvVar");
+                        $"Token source '{auth.Token}' for GitHub token is not set or empty.",
+                        "VaultaX:Authentication:Token");
                 }
                 break;
 
@@ -204,11 +205,11 @@ public static class VaultaXOptionsValidator
                 break;
 
             case "custom":
-                if (string.IsNullOrWhiteSpace(auth.CustomAuthPath))
+                if (string.IsNullOrWhiteSpace(auth.CustomPath))
                 {
                     throw new VaultaXConfigurationException(
-                        "VaultaX:Authentication:CustomAuthPath is required for Custom authentication.",
-                        "VaultaX:Authentication:CustomAuthPath");
+                        "VaultaX:Authentication:CustomPath is required for Custom authentication.",
+                        "VaultaX:Authentication:CustomPath");
                 }
                 break;
         }

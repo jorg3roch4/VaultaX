@@ -41,11 +41,11 @@ public sealed class KubernetesAuthMethod : AuthMethodBase
     /// <inheritdoc />
     public override IAuthMethodInfo GetAuthMethodInfo()
     {
-        if (string.IsNullOrWhiteSpace(Options.KubernetesRole))
+        if (string.IsNullOrWhiteSpace(Options.Role))
         {
             throw new VaultaXConfigurationException(
-                "KubernetesRole is required for Kubernetes authentication.",
-                "VaultaX:Authentication:KubernetesRole");
+                "Role is required for Kubernetes authentication.",
+                "VaultaX:Authentication:Role");
         }
 
         var tokenPath = Options.ServiceAccountTokenPath;
@@ -65,6 +65,6 @@ public sealed class KubernetesAuthMethod : AuthMethodBase
         var jwt = File.ReadAllText(tokenPath).Trim();
         var mountPath = GetMountPath("kubernetes");
 
-        return new KubernetesAuthMethodInfo(mountPath, Options.KubernetesRole, jwt);
+        return new KubernetesAuthMethodInfo(mountPath, Options.Role, jwt);
     }
 }

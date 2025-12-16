@@ -46,7 +46,7 @@ public sealed class LdapAuthMethod : AuthMethodBase
                 "VaultaX:Authentication:Username");
         }
 
-        var password = GetRequiredEnvVar(Options.PasswordEnvVar, "LDAP Password");
+        var password = GetRequiredEnvVar(Options.Password, "LDAP Password");
         var mountPath = GetMountPath("ldap");
 
         return new LDAPAuthMethodInfo(mountPath, Options.Username, password);

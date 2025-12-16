@@ -2,6 +2,18 @@
 
 All notable changes to VaultaX will be documented in this file.
 
+## [1.0.1] - 2025-12-16
+
+### Changed
+- **Fluent API and AppSettings Synchronization** - All authentication properties are now fully synchronized between both configuration approaches with identical names.
+- **Simplified Authentication Property Names** - Unified contextual properties (`Role`, `Token`, `Username`, `Password`) and shorter names across all authentication methods.
+
+### Fixed
+- **Health Check Extension** - Now gracefully handles disabled VaultaX by returning healthy status.
+
+### Updated
+- Documentation and samples updated
+
 ## [1.0.0] - 2025-12-15
 
 ### Added

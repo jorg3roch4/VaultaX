@@ -174,7 +174,7 @@ public class ConfigAwareService
     "Authentication": {
       "Method": "AppRole",
       "RoleId": "abc123",
-      "SecretIdEnvVar": "VAULT_SECRET_ID"
+      "SecretId": "VAULT_SECRET_ID"
     },
     "Reload": {
       "Enabled": true,

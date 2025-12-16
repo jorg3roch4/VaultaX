@@ -50,7 +50,7 @@ public sealed class AppRoleAuthMethod : AuthMethodBase
                 "VaultaX:Authentication:RoleId");
         }
 
-        var secretId = GetRequiredEnvVar(Options.SecretIdEnvVar, "AppRole SecretId");
+        var secretId = GetRequiredEnvVar(Options.SecretId, "AppRole SecretId");
         var mountPath = GetMountPath("approle");
 
         return new AppRoleAuthMethodInfo(mountPath, Options.RoleId, secretId);

@@ -31,16 +31,24 @@ Of course, there's absolutely no obligation. If you prefer, simply starring the 
 
 ---
 
-## 🎉 What's New in 1.0.0
+## ✨ Features
 
-**Initial Release!** VaultaX 1.0.0 provides a complete HashiCorp Vault integration:
+- **Transparent Configuration**: Vault secrets automatically overlay `appsettings.json`
+- **Multiple Authentication Methods**: Token, AppRole, Kubernetes, LDAP, JWT, AWS, Azure, and more
+- **Secret Engines**: KV v1/v2, Transit (signing & encryption), PKI (certificates)
+- **Automatic Token Renewal**: Background service keeps tokens fresh
+- **Hot Reload**: Configuration updates without restart via `IOptionsMonitor`
+- **Health Checks**: Built-in ASP.NET Core health check integration
+- **Configuration Options**: appsettings.json or Fluent API
+- **Environment Variables**: Use `env:VARIABLE_NAME` for sensitive values
 
-- 🔐 **Transparent Configuration** - Vault secrets automatically overlay `appsettings.json`
-- 🔑 **11 Authentication Methods** - Token, AppRole, Kubernetes, LDAP, JWT, AWS, Azure, and more
-- 🗄️ **Secret Engines** - KV v1/v2, Transit (signing & encryption), PKI (certificates)
-- 🔄 **Automatic Token Renewal** - Background service keeps tokens fresh
-- 🔥 **Hot Reload** - Configuration updates without restart when secrets change
-- 💚 **Health Checks** - Built-in ASP.NET Core health check integration
+---
+
+## 🎉 What's New in 1.0.1
+
+- Unified configuration between Fluent API and appsettings.json
+- Simplified authentication property names
+- Health check improvements
 
 [See the full changelog](CHANGELOG.md) for details.
 
@@ -107,38 +115,6 @@ public class MyService(IConfiguration configuration)
     private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection");
 }
 ```
-
----
-
-## ✨ Features
-
-### Core Capabilities
-- **Transparent Configuration** - Vault secrets overlay `appsettings.json` values seamlessly
-- **Environment Variables** - Use `env:VARIABLE_NAME` to read sensitive values from environment
-- **Secret Mappings** - Map Vault secrets to configuration keys with flexible bindings
-- **Zero Breaking Changes** - When Vault is disabled, application uses `appsettings.json` seamlessly
-
-### Authentication Methods
-- **Token** - Direct token authentication
-- **AppRole** - Recommended for production workloads
-- **Kubernetes** - Service account authentication for K8s pods
-- **LDAP / UserPass / RADIUS** - Directory-based authentication
-- **JWT / OIDC** - JSON Web Token authentication
-- **AWS IAM** - AWS identity-based authentication
-- **Azure Managed Identity** - Azure workload identity
-- **GitHub** - GitHub token authentication
-- **Certificate** - TLS client certificate authentication
-
-### Secret Engines
-- **KV v1/v2** - Key-Value secrets with `IKeyValueEngine`
-- **Transit** - Encryption, decryption, and signing with `ITransitEngine`
-- **PKI** - Certificate generation with `IPkiEngine`
-
-### Enterprise Features
-- **Automatic Token Renewal** - Background service renews tokens before expiration
-- **Hot Reload** - React to secret changes with `IOptionsMonitor`
-- **Health Checks** - Monitor Vault connectivity, seal status, and token validity
-- **Custom Mount Points** - Support for non-default engine paths
 
 ---
 
@@ -257,9 +233,3 @@ Check out the **[samples folder](./samples)** for complete working examples.
 VaultaX is built on top of **[VaultSharp](https://github.com/rajanadar/VaultSharp)**, an excellent low-level Vault client for .NET. VaultaX provides a higher-level abstraction focused on configuration integration and modern .NET patterns.
 
 **VaultSharp Project:** [VaultSharp on GitHub](https://github.com/rajanadar/VaultSharp)
-
----
-
-## License
-
-[Apache 2.0 License](LICENSE)

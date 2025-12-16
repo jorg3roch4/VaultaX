@@ -39,7 +39,7 @@ public sealed class TokenAuthMethod : AuthMethodBase
     /// <inheritdoc />
     public override IAuthMethodInfo GetAuthMethodInfo()
     {
-        var token = GetRequiredEnvVar(Options.TokenEnvVar, "Vault Token");
+        var token = GetRequiredEnvVar(Options.Token, "Vault Token");
         return new TokenAuthMethodInfo(token);
     }
 }

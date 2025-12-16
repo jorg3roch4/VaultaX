@@ -39,17 +39,17 @@ public sealed class CustomAuthMethod : AuthMethodBase
     /// <inheritdoc />
     public override IAuthMethodInfo GetAuthMethodInfo()
     {
-        if (string.IsNullOrWhiteSpace(Options.CustomAuthPath))
+        if (string.IsNullOrWhiteSpace(Options.CustomPath))
         {
             throw new VaultaXConfigurationException(
-                "CustomAuthPath is required for Custom authentication.",
-                "VaultaX:Authentication:CustomAuthPath");
+                "CustomPath is required for Custom authentication.",
+                "VaultaX:Authentication:CustomPath");
         }
 
-        var authValue = GetRequiredEnvVar(Options.CustomAuthEnvVar, "Custom Auth Value");
+        var authValue = GetRequiredEnvVar(Options.CustomValue, "Custom Auth Value");
 
         // The custom auth method expects a delegate that returns Task<AuthInfo>
-        return new CustomAuthMethodInfo(Options.CustomAuthPath, async () =>
+        return new CustomAuthMethodInfo(Options.CustomPath, async () =>
         {
             return new VaultSharp.V1.Commons.AuthInfo
             {

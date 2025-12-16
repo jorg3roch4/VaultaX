@@ -6,15 +6,15 @@
 
         <!-- Package Identity -->
         <PackageId>VaultaX</PackageId>
-        <Version>1.0.0</Version>
-        <AssemblyVersion>1.0.0</AssemblyVersion>
-        <FileVersion>1.0.0</FileVersion>
+        <Version>1.0.1</Version>
+        <AssemblyVersion>1.0.1</AssemblyVersion>
+        <FileVersion>1.0.1</FileVersion>
 
         <!-- Package Metadata -->
         <Title>VaultaX - HashiCorp Vault Integration for .NET</Title>
         <Description>Comprehensive HashiCorp Vault integration for .NET 10+. Features: transparent configuration overlay, multiple authentication methods (AppRole, Kubernetes, LDAP, JWT, AWS, Azure), KV/Transit/PKI secret engines, automatic token renewal, hot-reload, and health checks.</Description>
         <PackageTags>vault hashicorp secrets configuration authentication pki transit encryption signing certificates dotnet security</PackageTags>
-        <PackageReleaseNotes>v1.0.0 - Initial release with KV, Transit, PKI engines, 11 authentication methods, token renewal, and health checks.</PackageReleaseNotes>
+        <PackageReleaseNotes>v1.0.1 - Synchronized Fluent API and AppSettings configuration (same properties, same names), simplified authentication property names, fixed health check for disabled VaultaX.</PackageReleaseNotes>
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 

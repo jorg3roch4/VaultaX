@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using VaultaX.HealthChecks;
@@ -46,7 +48,7 @@ public static class HealthChecksBuilderExtensions
 
         return builder.Add(new HealthCheckRegistration(
             name,
-            sp => sp.GetRequiredService<VaultHealthCheck>(),
+            sp => (IHealthCheck?)sp.GetService<VaultHealthCheck>() ?? DisabledHealthCheck.Instance,
             failureStatus,
             tags,
             timeout));
@@ -82,7 +84,7 @@ public static class HealthChecksBuilderExtensions
 
         return builder.Add(new HealthCheckRegistration(
             options.Name,
-            sp => sp.GetRequiredService<VaultHealthCheck>(),
+            sp => (IHealthCheck?)sp.GetService<VaultHealthCheck>() ?? DisabledHealthCheck.Instance,
             options.FailureStatus,
             options.Tags,
             options.Timeout));
@@ -113,4 +115,25 @@ public sealed class VaultHealthCheckOptions
     /// Gets or sets the timeout for the health check.
     /// </summary>
     public TimeSpan? Timeout { get; set; }
+}
+
+/// <summary>
+/// A health check that returns healthy when VaultaX is disabled.
+/// </summary>
+internal sealed class DisabledHealthCheck : IHealthCheck
+{
+    /// <summary>
+    /// Singleton instance.
+    /// </summary>
+    public static readonly DisabledHealthCheck Instance = new();
+
+    private static readonly Task<HealthCheckResult> HealthyResult =
+        Task.FromResult(HealthCheckResult.Healthy("VaultaX is disabled"));
+
+    private DisabledHealthCheck() { }
+
+    /// <inheritdoc />
+    public Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken cancellationToken = default) => HealthyResult;
 }

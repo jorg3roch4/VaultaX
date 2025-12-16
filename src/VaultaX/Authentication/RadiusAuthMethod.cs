@@ -39,16 +39,16 @@ public sealed class RadiusAuthMethod : AuthMethodBase
     /// <inheritdoc />
     public override IAuthMethodInfo GetAuthMethodInfo()
     {
-        if (string.IsNullOrWhiteSpace(Options.RadiusUsername))
+        if (string.IsNullOrWhiteSpace(Options.Username))
         {
             throw new VaultaXConfigurationException(
-                "RadiusUsername is required for RADIUS authentication.",
-                "VaultaX:Authentication:RadiusUsername");
+                "Username is required for RADIUS authentication.",
+                "VaultaX:Authentication:Username");
         }
 
-        var password = GetRequiredEnvVar(Options.RadiusPasswordEnvVar, "RADIUS Password");
+        var password = GetRequiredEnvVar(Options.Password, "RADIUS Password");
         var mountPath = GetMountPath("radius");
 
-        return new RADIUSAuthMethodInfo(mountPath, Options.RadiusUsername, password);
+        return new RADIUSAuthMethodInfo(mountPath, Options.Username, password);
     }
 }

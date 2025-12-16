@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using VaultaX.Abstractions;
+using VaultaX.Configuration;
 using VaultaX.Extensions;
 
 // ============================================================================
@@ -18,44 +19,195 @@ using VaultaX.Extensions;
 // 1. Configuration loading from Vault (secrets override appsettings)
 // 2. DI registration of VaultaX services
 // 3. Health checks integration
-// 4. Using Transit engine for signing
+// 4. Using Transit engine for signing/encryption
 // 5. Using KV engine for reading secrets
+//
+// TWO CONFIGURATION APPROACHES:
+// - OPTION A: AppSettings (appsettings.json) - Currently active
+// - OPTION B: Fluent API (code) - Comment out Option A and uncomment Option B
 // ============================================================================
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ============================================================================
+// OPTION A: Configuration via appsettings.json (ACTIVE)
+// ============================================================================
+// All configuration is in appsettings.json under the "VaultaX" section.
+// This is the recommended approach for most scenarios as it allows
+// configuration changes without recompilation.
+// ============================================================================
+
 // Step 1: Add VaultaX as a configuration source
-// This will read secrets from Vault and overlay them onto appsettings.json values
-// If Vault is disabled (VaultaX:Enabled = false), this does nothing
 builder.Configuration.AddVaultaX();
 
-// Step 2: Register VaultaX services
-// This adds IVaultClient, IKeyValueEngine, ITransitEngine, IPkiEngine
-// Also registers background services for token renewal and secret change detection
+// Step 2: Register VaultaX services from configuration
 builder.Services.AddVaultaX(builder.Configuration);
 
-// Step 3: Add health checks with VaultaX
+// ============================================================================
+// OPTION B: Configuration via Fluent API (COMMENTED OUT)
+// ============================================================================
+// Uncomment this section and comment out Option A to use Fluent API.
+// All configuration is done in code, useful for dynamic configuration.
+// ============================================================================
+
+/*
+// Step 1: Add VaultaX as a configuration source with Fluent API
+builder.Configuration.AddVaultaX(options =>
+{
+    options.Enabled = true;
+    options.Address = "http://localhost:8200";
+    options.MountPoint = "secret";
+    options.KvVersion = 2;
+    options.BasePath = "development";
+
+    // Authentication - Token method (simplest for development)
+    options.Authentication.Method = "Token";
+    options.Authentication.Token = "VAULT_TOKEN"; // Reads from env var
+
+    // Alternative: AppRole (recommended for production)
+    // options.Authentication.Method = "AppRole";
+    // options.Authentication.RoleId = "my-role-id";
+    // options.Authentication.SecretId = "VAULT_SECRET_ID";
+
+    // Alternative: Kubernetes
+    // options.Authentication.Method = "Kubernetes";
+    // options.Authentication.Role = "my-k8s-role";
+    // options.Authentication.ServiceAccountTokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token";
+
+    // Alternative: LDAP/UserPass
+    // options.Authentication.Method = "LDAP"; // or "UserPass"
+    // options.Authentication.Username = "myuser";
+    // options.Authentication.Password = "VAULT_PASSWORD";
+
+    // Alternative: JWT
+    // options.Authentication.Method = "JWT";
+    // options.Authentication.Role = "my-jwt-role";
+    // options.Authentication.Token = "JWT_TOKEN";
+
+    // Alternative: AWS
+    // options.Authentication.Method = "AWS";
+    // options.Authentication.Role = "my-aws-role";
+    // options.Authentication.Region = "us-east-1";
+    // options.Authentication.AuthType = "iam";
+
+    // Alternative: Azure
+    // options.Authentication.Method = "Azure";
+    // options.Authentication.Role = "my-azure-role";
+    // options.Authentication.Resource = "https://management.azure.com/";
+
+    // Alternative: GitHub
+    // options.Authentication.Method = "GitHub";
+    // options.Authentication.Token = "GITHUB_TOKEN";
+
+    // Alternative: Certificate
+    // options.Authentication.Method = "Certificate";
+    // options.Authentication.CertificatePath = "/path/to/cert.pfx";
+    // options.Authentication.CertificatePassword = "CERT_PASSWORD";
+    // options.Authentication.Role = "my-cert-role";
+
+    // Alternative: RADIUS
+    // options.Authentication.Method = "RADIUS";
+    // options.Authentication.Username = "myuser";
+    // options.Authentication.Password = "RADIUS_PASSWORD";
+
+    // Alternative: Custom
+    // options.Authentication.Method = "Custom";
+    // options.Authentication.CustomPath = "auth/custom/login";
+    // options.Authentication.CustomValue = "CUSTOM_AUTH_TOKEN";
+
+    // Secret mappings - map Vault secrets to configuration keys
+    options.Mappings.Add(new SecretMappingOptions
+    {
+        SecretPath = "database",
+        Bindings = new()
+        {
+            ["connectionString"] = "ConnectionStrings:DefaultConnection",
+            ["password"] = "Database:Password"
+        }
+    });
+
+    options.Mappings.Add(new SecretMappingOptions
+    {
+        SecretPath = "rabbitmq",
+        Bindings = new()
+        {
+            ["host"] = "RabbitMQ:Host",
+            ["username"] = "RabbitMQ:Username",
+            ["password"] = "RabbitMQ:Password",
+            ["virtualHost"] = "RabbitMQ:VirtualHost"
+        }
+    });
+
+    options.Mappings.Add(new SecretMappingOptions
+    {
+        SecretPath = "jwt",
+        Bindings = new()
+        {
+            ["secret"] = "Jwt:Secret",
+            ["issuer"] = "Jwt:Issuer",
+            ["audience"] = "Jwt:Audience"
+        }
+    });
+
+    // Reload configuration - periodically check for secret changes
+    options.Reload.Enabled = true;
+    options.Reload.IntervalSeconds = 300;
+
+    // Token renewal - automatically renew token before expiration
+    options.TokenRenewal.Enabled = true;
+    options.TokenRenewal.CheckIntervalSeconds = 60;
+    options.TokenRenewal.ThresholdPercent = 75;
+    options.TokenRenewal.MaxConsecutiveFailures = 3;
+});
+
+// Step 2: Register VaultaX services with Fluent API
+builder.Services.AddVaultaX(options =>
+{
+    options.Enabled = true;
+    options.Address = "http://localhost:8200";
+    options.MountPoint = "secret";
+    options.KvVersion = 2;
+    options.BasePath = "development";
+
+    options.Authentication.Method = "Token";
+    options.Authentication.Token = "VAULT_TOKEN";
+
+    options.Mappings.Add(new SecretMappingOptions
+    {
+        SecretPath = "database",
+        Bindings = new()
+        {
+            ["connectionString"] = "ConnectionStrings:DefaultConnection",
+            ["password"] = "Database:Password"
+        }
+    });
+
+    options.Reload.Enabled = true;
+    options.Reload.IntervalSeconds = 300;
+
+    options.TokenRenewal.Enabled = true;
+    options.TokenRenewal.CheckIntervalSeconds = 60;
+});
+*/
+
+// ============================================================================
+// Health Checks
+// ============================================================================
 builder.Services.AddHealthChecks()
     .AddVaultaX("vault", tags: ["ready", "live"]);
 
-// Add API documentation (endpoints explorer for minimal APIs)
 builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
-
 app.UseHttpsRedirection();
-
-// Map health check endpoint
 app.MapHealthChecks("/health");
 
 // ============================================================================
 // Sample Endpoints
 // ============================================================================
 
-// Endpoint: Get current configuration value
-// Demonstrates how secrets from Vault override appsettings.json
+// Get configuration value (may come from Vault)
 app.MapGet("/config/{key}", (string key, IConfiguration configuration) =>
 {
     var value = configuration[key];
@@ -68,7 +220,7 @@ app.MapGet("/config/{key}", (string key, IConfiguration configuration) =>
 .WithName("GetConfiguration")
 .WithDescription("Gets a configuration value (may come from Vault if configured)");
 
-// Endpoint: Read a secret directly from Vault KV engine
+// Read secret from Vault KV engine
 app.MapGet("/secrets/{path}", async (string path, [FromServices] IKeyValueEngine? kvEngine) =>
 {
     if (kvEngine == null)
@@ -83,7 +235,6 @@ app.MapGet("/secrets/{path}", async (string path, [FromServices] IKeyValueEngine
         {
             path,
             keys = secret.Keys.ToList(),
-            // Don't expose actual values in production!
             warning = "Never expose secrets in production APIs"
         });
     }
@@ -93,9 +244,9 @@ app.MapGet("/secrets/{path}", async (string path, [FromServices] IKeyValueEngine
     }
 })
 .WithName("GetSecret")
-.WithDescription("Reads a secret from Vault KV engine (for demo purposes only)");
+.WithDescription("Reads a secret from Vault KV engine (demo only)");
 
-// Endpoint: Sign data using Transit engine
+// Sign data using Transit engine
 app.MapPost("/sign", async (SignRequest request, [FromServices] ITransitEngine? transitEngine) =>
 {
     if (transitEngine == null)
@@ -129,9 +280,9 @@ app.MapPost("/sign", async (SignRequest request, [FromServices] ITransitEngine? 
     }
 })
 .WithName("SignData")
-.WithDescription("Signs data using Vault Transit engine - private key never leaves Vault");
+.WithDescription("Signs data using Vault Transit engine");
 
-// Endpoint: Verify a signature using Transit engine
+// Verify signature using Transit engine
 app.MapPost("/verify", async (VerifyRequest request, [FromServices] ITransitEngine? transitEngine) =>
 {
     if (transitEngine == null)
@@ -153,11 +304,7 @@ app.MapPost("/verify", async (VerifyRequest request, [FromServices] ITransitEngi
             HashAlgorithm = hashAlgorithm
         });
 
-        return Results.Ok(new
-        {
-            valid = isValid,
-            keyName = request.KeyName
-        });
+        return Results.Ok(new { valid = isValid, keyName = request.KeyName });
     }
     catch (Exception ex)
     {
@@ -167,7 +314,7 @@ app.MapPost("/verify", async (VerifyRequest request, [FromServices] ITransitEngi
 .WithName("VerifySignature")
 .WithDescription("Verifies a signature using Vault Transit engine");
 
-// Endpoint: Encrypt data using Transit engine
+// Encrypt data using Transit engine
 app.MapPost("/encrypt", async (EncryptRequest request, [FromServices] ITransitEngine? transitEngine) =>
 {
     if (transitEngine == null)
@@ -181,11 +328,7 @@ app.MapPost("/encrypt", async (EncryptRequest request, [FromServices] ITransitEn
             request.KeyName,
             Encoding.UTF8.GetBytes(request.Plaintext));
 
-        return Results.Ok(new
-        {
-            ciphertext,
-            keyName = request.KeyName
-        });
+        return Results.Ok(new { ciphertext, keyName = request.KeyName });
     }
     catch (Exception ex)
     {
@@ -195,7 +338,7 @@ app.MapPost("/encrypt", async (EncryptRequest request, [FromServices] ITransitEn
 .WithName("EncryptData")
 .WithDescription("Encrypts data using Vault Transit engine");
 
-// Endpoint: Decrypt data using Transit engine
+// Decrypt data using Transit engine
 app.MapPost("/decrypt", async (DecryptRequest request, [FromServices] ITransitEngine? transitEngine) =>
 {
     if (transitEngine == null)
@@ -220,16 +363,12 @@ app.MapPost("/decrypt", async (DecryptRequest request, [FromServices] ITransitEn
 .WithName("DecryptData")
 .WithDescription("Decrypts data using Vault Transit engine");
 
-// Endpoint: Show Vault client status
+// Get Vault client status
 app.MapGet("/vault/status", ([FromServices] IVaultClient? vaultClient) =>
 {
     if (vaultClient == null)
     {
-        return Results.Ok(new
-        {
-            enabled = false,
-            message = "VaultaX is not configured"
-        });
+        return Results.Ok(new { enabled = false, message = "VaultaX is not configured" });
     }
 
     return Results.Ok(new
@@ -249,22 +388,7 @@ app.Run();
 // Request/Response Models
 // ============================================================================
 
-/// <summary>
-/// Request model for signing data.
-/// </summary>
 public record SignRequest(string KeyName, string Data, string? HashAlgorithm = null);
-
-/// <summary>
-/// Request model for verifying signatures.
-/// </summary>
 public record VerifyRequest(string KeyName, string Data, string Signature, string? HashAlgorithm = null);
-
-/// <summary>
-/// Request model for encrypting data.
-/// </summary>
 public record EncryptRequest(string KeyName, string Plaintext);
-
-/// <summary>
-/// Request model for decrypting data.
-/// </summary>
 public record DecryptRequest(string KeyName, string Ciphertext);

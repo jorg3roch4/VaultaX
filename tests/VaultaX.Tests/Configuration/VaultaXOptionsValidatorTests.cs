@@ -24,7 +24,7 @@ public class VaultaXOptionsValidatorTests
             Authentication = new AuthenticationOptions
             {
                 Method = "Token",
-                TokenEnvVar = "VAULT_TOKEN"
+                Token = "VAULT_TOKEN"
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -74,7 +74,7 @@ public class VaultaXOptionsValidatorTests
             Authentication = new AuthenticationOptions
             {
                 Method = "Token",
-                TokenEnvVar = null!
+                Token = null!
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -100,7 +100,7 @@ public class VaultaXOptionsValidatorTests
             {
                 Method = "AppRole",
                 RoleId = null,
-                SecretIdEnvVar = "VAULT_SECRET_ID"
+                SecretId = "VAULT_SECRET_ID"
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -126,7 +126,7 @@ public class VaultaXOptionsValidatorTests
             {
                 Method = "AppRole",
                 RoleId = "role-id",
-                SecretIdEnvVar = null!
+                SecretId = null!
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -151,7 +151,7 @@ public class VaultaXOptionsValidatorTests
             Authentication = new AuthenticationOptions
             {
                 Method = "Kubernetes",
-                KubernetesRole = null
+                Role = null
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -177,7 +177,7 @@ public class VaultaXOptionsValidatorTests
             {
                 Method = "UserPass",
                 Username = null,
-                PasswordEnvVar = "VAULT_PASSWORD"
+                Password = "VAULT_PASSWORD"
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -204,7 +204,7 @@ public class VaultaXOptionsValidatorTests
             {
                 Method = "UserPass",
                 Username = "user",
-                PasswordEnvVar = "VAULT_PASSWORD"
+                Password = "VAULT_PASSWORD"
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -230,7 +230,7 @@ public class VaultaXOptionsValidatorTests
             {
                 Method = "LDAP",
                 Username = null,
-                PasswordEnvVar = "VAULT_PASSWORD"
+                Password = "VAULT_PASSWORD"
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -255,7 +255,7 @@ public class VaultaXOptionsValidatorTests
             Authentication = new AuthenticationOptions
             {
                 Method = "GitHub",
-                GitHubTokenEnvVar = null
+                Token = null!
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -281,8 +281,8 @@ public class VaultaXOptionsValidatorTests
             Authentication = new AuthenticationOptions
             {
                 Method = "JWT",
-                JwtTokenEnvVar = null,
-                JwtRole = "my-role"
+                Token = null!,
+                Role = "my-role"
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -307,7 +307,7 @@ public class VaultaXOptionsValidatorTests
             Authentication = new AuthenticationOptions
             {
                 Method = "AWS",
-                AwsRole = null
+                Role = null
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -332,7 +332,7 @@ public class VaultaXOptionsValidatorTests
             Authentication = new AuthenticationOptions
             {
                 Method = "Azure",
-                AzureRole = null
+                Role = null
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -383,7 +383,7 @@ public class VaultaXOptionsValidatorTests
             Authentication = new AuthenticationOptions
             {
                 Method = "Token",
-                TokenEnvVar = "VAULT_TOKEN"
+                Token = "VAULT_TOKEN"
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -416,7 +416,7 @@ public class VaultaXOptionsValidatorTests
             Authentication = new AuthenticationOptions
             {
                 Method = "Token",
-                TokenEnvVar = "VAULT_TOKEN"
+                Token = "VAULT_TOKEN"
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -445,7 +445,7 @@ public class VaultaXOptionsValidatorTests
                 Authentication = new AuthenticationOptions
                 {
                     Method = "Token",
-                    TokenEnvVar = "VAULT_TOKEN"
+                    Token = "VAULT_TOKEN"
                 },
                 Mappings = new List<SecretMappingOptions>
                 {
@@ -478,7 +478,7 @@ public class VaultaXOptionsValidatorTests
                 {
                     Method = "AppRole",
                     RoleId = "role-id",
-                    SecretIdEnvVar = "VAULT_SECRET_ID"
+                    SecretId = "VAULT_SECRET_ID"
                 },
                 Mappings = new List<SecretMappingOptions>
                 {
@@ -506,7 +506,7 @@ public class VaultaXOptionsValidatorTests
             Authentication = new AuthenticationOptions
             {
                 Method = "Kubernetes",
-                KubernetesRole = "my-role"
+                Role = "my-role"
             },
             Mappings = new List<SecretMappingOptions>
             {
@@ -534,7 +534,7 @@ public class VaultaXOptionsValidatorTests
                 Authentication = new AuthenticationOptions
                 {
                     Method = "Token",
-                    TokenEnvVar = "VAULT_TOKEN"
+                    Token = "VAULT_TOKEN"
                 },
                 Mappings = new List<SecretMappingOptions>
                 {

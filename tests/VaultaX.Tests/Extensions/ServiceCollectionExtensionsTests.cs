@@ -50,7 +50,7 @@ public class ServiceCollectionExtensionsTests
                 ["VaultaX:Enabled"] = "true",
                 ["VaultaX:Address"] = "http://localhost:8200",
                 ["VaultaX:Authentication:Method"] = "Token",
-                ["VaultaX:Authentication:TokenEnvVar"] = "VAULT_TOKEN"
+                ["VaultaX:Authentication:Token"] = "VAULT_TOKEN"
             })
             .Build();
 
@@ -76,7 +76,7 @@ public class ServiceCollectionExtensionsTests
                 ["VaultaX:Enabled"] = "true",
                 ["VaultaX:Address"] = "http://localhost:8200",
                 ["VaultaX:Authentication:Method"] = "Token",
-                ["VaultaX:Authentication:TokenEnvVar"] = "VAULT_TOKEN"
+                ["VaultaX:Authentication:Token"] = "VAULT_TOKEN"
             })
             .Build();
 
@@ -102,7 +102,7 @@ public class ServiceCollectionExtensionsTests
                 ["VaultaX:Enabled"] = "true",
                 ["VaultaX:Address"] = "http://localhost:8200",
                 ["VaultaX:Authentication:Method"] = "Token",
-                ["VaultaX:Authentication:TokenEnvVar"] = "VAULT_TOKEN"
+                ["VaultaX:Authentication:Token"] = "VAULT_TOKEN"
             })
             .Build();
 
@@ -128,7 +128,7 @@ public class ServiceCollectionExtensionsTests
                 ["VaultaX:Enabled"] = "true",
                 ["VaultaX:Address"] = "http://localhost:8200",
                 ["VaultaX:Authentication:Method"] = "Token",
-                ["VaultaX:Authentication:TokenEnvVar"] = "VAULT_TOKEN"
+                ["VaultaX:Authentication:Token"] = "VAULT_TOKEN"
             })
             .Build();
 
@@ -154,7 +154,7 @@ public class ServiceCollectionExtensionsTests
                 ["VaultaX:Enabled"] = "true",
                 ["VaultaX:Address"] = "http://localhost:8200",
                 ["VaultaX:Authentication:Method"] = "Token",
-                ["VaultaX:Authentication:TokenEnvVar"] = "VAULT_TOKEN"
+                ["VaultaX:Authentication:Token"] = "VAULT_TOKEN"
             })
             .Build();
 
@@ -183,7 +183,7 @@ public class ServiceCollectionExtensionsTests
                 ["VaultaX:BasePath"] = "production",
                 ["VaultaX:Authentication:Method"] = "AppRole",
                 ["VaultaX:Authentication:RoleId"] = "my-role",
-                ["VaultaX:Authentication:SecretIdEnvVar"] = "VAULT_SECRET_ID"
+                ["VaultaX:Authentication:SecretId"] = "VAULT_SECRET_ID"
             })
             .Build();
 
@@ -203,7 +203,7 @@ public class ServiceCollectionExtensionsTests
         options.Value.BasePath.Should().Be("production");
         options.Value.Authentication.Method.Should().Be("AppRole");
         options.Value.Authentication.RoleId.Should().Be("my-role");
-        options.Value.Authentication.SecretIdEnvVar.Should().Be("VAULT_SECRET_ID");
+        options.Value.Authentication.SecretId.Should().Be("VAULT_SECRET_ID");
     }
 
     [Fact]
@@ -216,7 +216,7 @@ public class ServiceCollectionExtensionsTests
                 ["VaultaX:Enabled"] = "true",
                 ["VaultaX:Address"] = "http://localhost:8200",
                 ["VaultaX:Authentication:Method"] = "Token",
-                ["VaultaX:Authentication:TokenEnvVar"] = "VAULT_TOKEN"
+                ["VaultaX:Authentication:Token"] = "VAULT_TOKEN"
             })
             .Build();
 
@@ -242,7 +242,7 @@ public class ServiceCollectionExtensionsTests
                 ["VaultaX:Enabled"] = "true",
                 ["VaultaX:Address"] = "http://localhost:8200",
                 ["VaultaX:Authentication:Method"] = "Token",
-                ["VaultaX:Authentication:TokenEnvVar"] = "VAULT_TOKEN"
+                ["VaultaX:Authentication:Token"] = "VAULT_TOKEN"
             })
             .Build();
 

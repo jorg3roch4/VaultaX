@@ -46,7 +46,7 @@ public sealed class UserPassAuthMethod : AuthMethodBase
                 "VaultaX:Authentication:Username");
         }
 
-        var password = GetRequiredEnvVar(Options.PasswordEnvVar, "UserPass Password");
+        var password = GetRequiredEnvVar(Options.Password, "UserPass Password");
         var mountPath = GetMountPath("userpass");
 
         return new UserPassAuthMethodInfo(mountPath, Options.Username, password);

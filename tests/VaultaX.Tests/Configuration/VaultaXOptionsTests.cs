@@ -37,9 +37,9 @@ public class VaultaXOptionsTests
 
         // Assert
         options.Method.Should().Be("AppRole");
-        options.TokenEnvVar.Should().Be("VAULT_TOKEN");
+        options.Token.Should().Be("VAULT_TOKEN");
         options.RoleId.Should().BeNull();
-        options.SecretIdEnvVar.Should().Be("VAULT_SECRET_ID");
+        options.SecretId.Should().Be("VAULT_SECRET_ID");
         options.MountPath.Should().BeEmpty();
     }
 
@@ -109,7 +109,7 @@ public class VaultaXOptionsTests
 
         var options = new AuthenticationOptions
         {
-            TokenEnvVar = envVarName
+            Token = envVarName
         };
 
         try
@@ -136,7 +136,7 @@ public class VaultaXOptionsTests
 
         var options = new AuthenticationOptions
         {
-            SecretIdEnvVar = envVarName
+            SecretId = envVarName
         };
 
         try
@@ -168,7 +168,7 @@ public class VaultaXOptionsTests
             {
                 Method = "AppRole",
                 RoleId = "my-role-id",
-                SecretIdEnvVar = "VAULT_SECRET_ID"
+                SecretId = "VAULT_SECRET_ID"
             },
             Mappings =
             [

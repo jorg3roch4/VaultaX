@@ -18,7 +18,7 @@ Una API REST que obtiene credenciales de base de datos desde Vault.
     "Authentication": {
       "Method": "AppRole",
       "RoleId": "env:VAULT_ROLE_ID",
-      "SecretIdEnvVar": "VAULT_SECRET_ID"
+      "SecretId": "VAULT_SECRET_ID"
     },
     "Mappings": [
       {
@@ -86,7 +86,7 @@ Servicio que consume mensajes de RabbitMQ con credenciales de Vault.
     "BasePath": "consumer-service/prod",
     "Authentication": {
       "Method": "Kubernetes",
-      "KubernetesRole": "consumer-service"
+      "Role": "consumer-service"
     },
     "Mappings": [
       {
@@ -166,7 +166,7 @@ Firmar mensajes de pago SPEI según requerimientos de Banxico.
     "Authentication": {
       "Method": "AppRole",
       "RoleId": "env:VAULT_ROLE_ID",
-      "SecretIdEnvVar": "VAULT_SECRET_ID"
+      "SecretId": "VAULT_SECRET_ID"
     }
   }
 }
@@ -611,7 +611,7 @@ public class PaymentProcessorService : BackgroundService
       "Method": "AppRole",
       "MountPath": "auth/approle",
       "RoleId": "env:VAULT_ROLE_ID",
-      "SecretIdEnvVar": "VAULT_SECRET_ID"
+      "SecretId": "VAULT_SECRET_ID"
     },
     "TokenRenewal": {
       "Enabled": true,

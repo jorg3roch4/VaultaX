@@ -40,11 +40,11 @@ public sealed class AzureAuthMethod : AuthMethodBase
     /// <inheritdoc />
     public override IAuthMethodInfo GetAuthMethodInfo()
     {
-        if (string.IsNullOrWhiteSpace(Options.AzureRole))
+        if (string.IsNullOrWhiteSpace(Options.Role))
         {
             throw new VaultaXConfigurationException(
-                "AzureRole is required for Azure authentication.",
-                "VaultaX:Authentication:AzureRole");
+                "Role is required for Azure authentication.",
+                "VaultaX:Authentication:Role");
         }
 
         var mountPath = GetMountPath("azure");
@@ -54,7 +54,7 @@ public sealed class AzureAuthMethod : AuthMethodBase
 
         return new AzureAuthMethodInfo(
             mountPoint: mountPath,
-            roleName: Options.AzureRole,
+            roleName: Options.Role,
             jwt: jwt);
     }
 }

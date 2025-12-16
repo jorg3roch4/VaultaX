@@ -43,7 +43,7 @@ vault kv put secret/myapp/prod/api-keys \
     "Authentication": {
       "Method": "AppRole",
       "RoleId": "env:VAULT_ROLE_ID",
-      "SecretIdEnvVar": "VAULT_SECRET_ID"
+      "SecretId": "VAULT_SECRET_ID"
     },
     "Mappings": [
       {
@@ -174,8 +174,8 @@ done
     "BasePath": "myapp/prod",
     "Authentication": {
       "Method": "Aws",
-      "AwsRole": "myapp-vault-role",
-      "AwsAuthType": "iam"
+      "Role": "myapp-vault-role",
+      "AuthType": "iam"
     },
     "Mappings": [/* ... */]
   }
@@ -240,7 +240,7 @@ public class SecretService
     "Authentication": {
       "Method": "AppRole",
       "RoleId": "env:VAULT_ROLE_ID",
-      "SecretIdEnvVar": "VAULT_SECRET_ID"
+      "SecretId": "VAULT_SECRET_ID"
     },
     "Mappings": [
       {
@@ -366,7 +366,7 @@ public class VaultService : IHostedService
     "Authentication": {
       "Method": "AppRole",
       "RoleId": "env:VAULT_ROLE_ID",
-      "SecretIdEnvVar": "VAULT_SECRET_ID"
+      "SecretId": "VAULT_SECRET_ID"
     },
     "TokenRenewal": {
       "Enabled": true,
