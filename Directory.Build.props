@@ -13,7 +13,7 @@
         <Company>jorg3roch4</Company>
         <Product>VaultaX</Product>
         <Copyright>Copyright (c) 2025 jorg3roch4</Copyright>
-        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageIcon>icon-128x128.png</PackageIcon>
         <NeutralLanguage>en</NeutralLanguage>
         <MinClientVersion>6.0</MinClientVersion>
@@ -22,13 +22,12 @@
         <PackageProjectUrl>https://github.com/jorg3roch4/VaultaX</PackageProjectUrl>
         <RepositoryUrl>https://github.com/jorg3roch4/VaultaX</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <PublishRepositoryUrl>false</PublishRepositoryUrl>
 
         <!-- Documentation and Symbols -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>false</IncludeSymbols>
+        <EmbedUntrackedSources>false</EmbedUntrackedSources>
 
         <!-- Build Configuration -->
         <Deterministic>true</Deterministic>
@@ -45,8 +44,4 @@
         <None Include="$(MSBuildThisFileDirectory)LICENSE" Pack="true" PackagePath="\" Visible="false" Condition="Exists('$(MSBuildThisFileDirectory)LICENSE')" />
     </ItemGroup>
 
-    <!-- SourceLink -->
-    <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    </ItemGroup>
 </Project>

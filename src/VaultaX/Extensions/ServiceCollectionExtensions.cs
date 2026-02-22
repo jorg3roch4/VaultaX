@@ -2,6 +2,8 @@ using System;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using VaultaX.Abstractions;
 using VaultaX.BackgroundServices;
 using VaultaX.Configuration;
@@ -57,7 +59,24 @@ public static class ServiceCollectionExtensions
         services.Configure<VaultaXOptions>(configuration.GetSection(VaultaXOptions.SectionName));
 
         // Register the Vault client (singleton for connection pooling)
-        services.TryAddSingleton<IVaultClient, VaultClientWrapper>();
+        // Use a factory to eagerly authenticate so IsAuthenticated is true when resolved
+        services.TryAddSingleton<IVaultClient>(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<VaultaXOptions>>();
+            var logger = sp.GetService<ILogger<VaultClientWrapper>>();
+            var client = new VaultClientWrapper(opts, logger);
+
+            try
+            {
+                client.AuthenticateAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                logger?.LogWarning(ex, "VaultaX: Eager authentication failed during service registration. Client will retry on first use");
+            }
+
+            return client;
+        });
 
         // Register KV engine
         services.TryAddSingleton<IKeyValueEngine, KeyValueEngine>();

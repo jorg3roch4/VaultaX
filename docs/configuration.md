@@ -459,6 +459,32 @@ VaultaX valida la configuración al iniciar:
 
 Errores de validación lanzan `VaultaXConfigurationException` al iniciar la aplicación.
 
+## Autenticación Eager del Cliente DI
+
+A partir de la versión **1.0.2**, el `IVaultClient` registrado en DI por `AddVaultaX()` autentica automáticamente al ser resuelto por primera vez. Esto significa que:
+
+- `IsAuthenticated` retorna `true` inmediatamente después de resolver el cliente del DI
+- No es necesario llamar `AuthenticateAsync()` manualmente antes de verificar el estado
+- Si la autenticación falla durante el registro, se loggea un warning y el cliente queda disponible para reintentos posteriores
+
+```csharp
+// El cliente ya está autenticado al resolverse
+var vaultClient = app.Services.GetRequiredService<IVaultClient>();
+Console.WriteLine(vaultClient.IsAuthenticated); // true
+```
+
+Esto es especialmente útil para patrones de validación al startup:
+
+```csharp
+var vaultClient = app.Services.GetService<IVaultClient>();
+if (vaultClient != null && !vaultClient.IsAuthenticated)
+{
+    // Solo se ejecuta si la autenticación falló al inicio
+    Log.Fatal("No se pudo conectar a Vault");
+    Environment.Exit(1);
+}
+```
+
 ## Orden de Prioridad de Configuración
 
 1. Variables de entorno (mayor prioridad)

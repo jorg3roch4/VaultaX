@@ -4,7 +4,7 @@
 
 **HashiCorp Vault Integration for .NET 10+**
 
-[![NuGet](https://img.shields.io/nuget/v/VaultaX.svg?style=flat-square)](https://www.nuget.org/packages/VaultaX)[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat-square)](https://github.com/jorg3roch4/VaultaX/blob/main/LICENSE)[![C#](https://img.shields.io/badge/C%23-14-239120.svg?style=flat-square)](https://docs.microsoft.com/en-us/dotnet/csharp/)[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4.svg?style=flat-square)](https://dotnet.microsoft.com/)
+[![NuGet](https://img.shields.io/nuget/v/VaultaX.svg?style=flat-square)](https://www.nuget.org/packages/VaultaX)[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/jorg3roch4/VaultaX/blob/main/LICENSE)[![C#](https://img.shields.io/badge/C%23-14-239120.svg?style=flat-square)](https://docs.microsoft.com/en-us/dotnet/csharp/)[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4.svg?style=flat-square)](https://dotnet.microsoft.com/)
 
 **VaultaX** is a comprehensive .NET library for seamless HashiCorp Vault integration. It provides transparent secret management where Vault secrets automatically overlay your `appsettings.json` values, automatic token renewal, and support for multiple secret engines including KV, Transit (for signing/encryption), and PKI.
 
@@ -44,11 +44,10 @@ Of course, there's absolutely no obligation. If you prefer, simply starring the 
 
 ---
 
-## 🎉 What's New in 1.0.1
+## 🎉 What's New in 1.0.2
 
-- Unified configuration between Fluent API and appsettings.json
-- Simplified authentication property names
-- Health check improvements
+- **Eager authentication** for DI-registered `IVaultClient` - `IsAuthenticated` is now `true` immediately after resolving from DI
+- Fixed `IsAuthenticated` returning `false` on fresh DI client instances
 
 [See the full changelog](CHANGELOG.md) for details.
 

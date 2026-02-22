@@ -224,6 +224,11 @@ _Pvt_Extensions
 .claude/
 CLAUDE.md
 temp/
+tasks/
 
 # Obsidian
 .obsidian/
+nnul
+
+# Windows reserved device names
+nul

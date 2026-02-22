@@ -46,6 +46,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddVaultaX();
 
 // Paso 2: Registrar servicios de VaultaX
+// El IVaultClient se autentica automáticamente al registrarse
 builder.Services.AddVaultaX(builder.Configuration);
 
 // Paso 3 (Opcional): Agregar health check

@@ -209,6 +209,45 @@ vault write -f auth/approle/role/myapp-role/secret-id
 
 ---
 
+### "IsAuthenticated returns false" (versiones anteriores a 1.0.2)
+
+**Síntomas:**
+```
+VaultaX validation failed. Application cannot start without valid Vault connection
+```
+
+O al verificar `vaultClient.IsAuthenticated` en código de startup, retorna `false` a pesar de que la configuración se cargó correctamente.
+
+**Causa:**
+
+En versiones anteriores a 1.0.2, el `IVaultClient` registrado en DI mediante `AddVaultaX()` era una instancia separada e independiente del cliente usado por el configuration provider (`AddVaultaX()` en `IConfigurationBuilder`). Esta instancia del DI era **lazy** — no autenticaba hasta que se realizara una operación explícita como `AuthenticateAsync()` o `ReadSecretAsync()`.
+
+Esto generaba confusión: la configuración se cargaba correctamente desde Vault (el configuration provider funcionaba), pero el `IVaultClient` obtenido del DI reportaba `IsAuthenticated = false`.
+
+**Solución:**
+
+1. **Actualizar a VaultaX 1.0.2+** — El cliente ahora autentica eagerly al ser resuelto del DI:
+   ```bash
+   dotnet add package VaultaX --version 1.0.2
+   ```
+
+2. **Si no puedes actualizar**, llama `AuthenticateAsync()` antes de verificar:
+   ```csharp
+   var vaultClient = app.Services.GetService<IVaultClient>();
+   if (vaultClient != null)
+   {
+       // Autenticar explícitamente antes de verificar estado
+       await vaultClient.AuthenticateAsync();
+
+       if (!vaultClient.IsAuthenticated)
+       {
+           // Manejar error...
+       }
+   }
+   ```
+
+---
+
 ## Errores de Secretos
 
 ### "Secret not found"

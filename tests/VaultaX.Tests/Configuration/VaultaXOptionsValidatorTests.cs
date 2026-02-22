@@ -38,11 +38,10 @@ public class VaultaXOptionsValidatorTests
             .WithMessage("*Address*");
     }
 
-    [Fact(Skip = "Environment variable validation happens at runtime, not during options validation")]
+    [Fact]
     public void Validate_ThrowsException_WhenAuthMethodIsEmpty()
     {
         // Arrange
-        Environment.SetEnvironmentVariable("VAULT_TOKEN", null);
         var options = new VaultaXOptions
         {
             Enabled = true,
@@ -60,7 +59,7 @@ public class VaultaXOptionsValidatorTests
         // Act & Assert
         var action = () => VaultaXOptionsValidator.Validate(options);
         action.Should().Throw<VaultaXConfigurationException>()
-            .WithMessage("*authentication method*");
+            .WithMessage("*Method*");
     }
 
     [Fact]
@@ -371,11 +370,10 @@ public class VaultaXOptionsValidatorTests
             .WithMessage("*CertificatePath*");
     }
 
-    [Fact(Skip = "Environment variable validation happens at runtime, not during options validation")]
+    [Fact]
     public void Validate_ThrowsException_WhenMappingHasNoSecretPath()
     {
         // Arrange
-        Environment.SetEnvironmentVariable("VAULT_TOKEN", null);
         var options = new VaultaXOptions
         {
             Enabled = true,
@@ -383,7 +381,7 @@ public class VaultaXOptionsValidatorTests
             Authentication = new AuthenticationOptions
             {
                 Method = "Token",
-                Token = "VAULT_TOKEN"
+                Token = "static:test-token"
             },
             Mappings = new List<SecretMappingOptions>
             {

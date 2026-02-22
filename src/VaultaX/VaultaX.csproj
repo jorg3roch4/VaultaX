@@ -6,15 +6,15 @@
 
         <!-- Package Identity -->
         <PackageId>VaultaX</PackageId>
-        <Version>1.0.1</Version>
-        <AssemblyVersion>1.0.1</AssemblyVersion>
-        <FileVersion>1.0.1</FileVersion>
+        <Version>1.0.2</Version>
+        <AssemblyVersion>1.0.2</AssemblyVersion>
+        <FileVersion>1.0.2</FileVersion>
 
         <!-- Package Metadata -->
         <Title>VaultaX - HashiCorp Vault Integration for .NET</Title>
         <Description>Comprehensive HashiCorp Vault integration for .NET 10+. Features: transparent configuration overlay, multiple authentication methods (AppRole, Kubernetes, LDAP, JWT, AWS, Azure), KV/Transit/PKI secret engines, automatic token renewal, hot-reload, and health checks.</Description>
         <PackageTags>vault hashicorp secrets configuration authentication pki transit encryption signing certificates dotnet security</PackageTags>
-        <PackageReleaseNotes>v1.0.1 - Synchronized Fluent API and AppSettings configuration (same properties, same names), simplified authentication property names, fixed health check for disabled VaultaX.</PackageReleaseNotes>
+        <PackageReleaseNotes>v1.0.2 - Eager authentication for DI-registered IVaultClient, fixed IsAuthenticated returning false on fresh DI client resolution.</PackageReleaseNotes>
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
@@ -26,14 +26,14 @@
     <!-- Dependencies -->
     <ItemGroup>
         <PackageReference Include="VaultSharp" Version="1.17.5.1" />
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.3" />
     </ItemGroup>
 </Project>

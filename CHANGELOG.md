@@ -2,6 +2,14 @@
 
 All notable changes to VaultaX will be documented in this file.
 
+## [1.0.2] - 2026-02-20
+
+### Changed
+- **Eager Authentication for DI Client** - The `IVaultClient` singleton registered via `AddVaultaX()` now authenticates eagerly during service resolution. `IsAuthenticated` returns `true` immediately after resolving the client from DI, without needing to call `AuthenticateAsync()` first.
+
+### Fixed
+- **IsAuthenticated false on fresh DI client** - Previously, the DI-registered `IVaultClient` was a separate lazy instance from the configuration provider client. Consumers resolving `IVaultClient` from DI would get `IsAuthenticated = false` until an explicit operation was performed. This caused issues with startup validation patterns that checked `IsAuthenticated` before any Vault operation.
+
 ## [1.0.1] - 2025-12-16
 
 ### Changed
