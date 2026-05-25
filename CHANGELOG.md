@@ -2,6 +2,12 @@
 
 All notable changes to VaultaX will be documented in this file.
 
+## [1.1.2] - 2026-05-25
+
+### Changed
+
+- **Republish bump** of 1.1.1 (version-only change required to push to nuget.org). No runtime changes vs 1.1.1.
+
 ## [1.1.0] - 2026-04-22
 
 ### Added

@@ -6,15 +6,15 @@
 
         <!-- Package Identity -->
         <PackageId>VaultaX</PackageId>
-        <Version>1.1.1</Version>
-        <AssemblyVersion>1.1.1</AssemblyVersion>
-        <FileVersion>1.1.1</FileVersion>
+        <Version>1.1.2</Version>
+        <AssemblyVersion>1.1.2</AssemblyVersion>
+        <FileVersion>1.1.2</FileVersion>
 
         <!-- Package Metadata -->
         <Title>VaultaX - HashiCorp Vault Integration for .NET</Title>
         <Description>Comprehensive HashiCorp Vault integration for .NET 10+. Features: transparent configuration overlay, multiple authentication methods (AppRole, Kubernetes, LDAP, JWT, AWS, Azure), KV/Transit/PKI secret engines, automatic token renewal, hot-reload, and health checks.</Description>
         <PackageTags>vault hashicorp secrets configuration authentication pki transit encryption signing certificates dotnet security</PackageTags>
-        <PackageReleaseNotes>v1.1.1 - Fix raw HTTP authentication in VaultClientWrapper.SendRawRequestAsync: GetCertificateChainAsync, GetCertificateSerialAsync, and SetCertificateChainAsync now correctly attach the Vault token for Token-based auth. Restores intended behavior of v1.1.0 certificate chain feature.</PackageReleaseNotes>
+        <PackageReleaseNotes>v1.1.2 - Republish bump of 1.1.1 (version-only change). Original 1.1.1: Fix raw HTTP authentication in VaultClientWrapper.SendRawRequestAsync — GetCertificateChainAsync, GetCertificateSerialAsync, and SetCertificateChainAsync now correctly attach the Vault token for Token-based auth. Restores intended behavior of v1.1.0 certificate chain feature.</PackageReleaseNotes>
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
