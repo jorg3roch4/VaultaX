@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +15,7 @@ using VaultaX.Authentication;
 using VaultaX.Configuration;
 using VaultaX.Exceptions;
 using VaultSharp;
+using VaultSharp.V1.AuthMethods.Token;
 using VaultSharp.V1.Commons;
 
 namespace VaultaX.Services;
@@ -319,6 +324,224 @@ public sealed class VaultClientWrapper : Abstractions.IVaultClient, IDisposable
     /// <inheritdoc />
     public VaultSharp.IVaultClient GetUnderlyingClient() => GetOrCreateClient();
 
+    private static readonly JsonSerializerOptions RawJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
+
+    private HttpClient? _rawHttpClient;
+    private readonly object _rawHttpClientLock = new();
+
+    /// <inheritdoc />
+    public async Task<TResponse?> SendRawRequestAsync<TResponse>(
+        HttpMethod method,
+        string relativePath,
+        object? body = null,
+        CancellationToken cancellationToken = default)
+        where TResponse : class
+    {
+        ArgumentNullException.ThrowIfNull(method);
+        ArgumentException.ThrowIfNullOrWhiteSpace(relativePath);
+
+        var trimmedPath = relativePath.TrimStart('/');
+        var client = GetOrCreateClient();
+
+        var token = await GetVaultTokenAsync(client).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new VaultOperationException(
+                "Could not obtain a Vault token for raw HTTP request. Ensure the client is authenticated.");
+        }
+
+        var baseAddress = (_options.Address ?? string.Empty).TrimEnd('/');
+        var requestUri = new Uri($"{baseAddress}/v1/{trimmedPath}", UriKind.Absolute);
+
+        using var request = new HttpRequestMessage(method, requestUri);
+        request.Headers.Add("X-Vault-Token", token);
+
+        if (body is not null)
+        {
+            var json = JsonSerializer.Serialize(body, RawJsonOptions);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        }
+
+        var http = GetRawHttpClient();
+        _logger?.LogDebug("Raw Vault request {Method} {Path}", method.Method, trimmedPath);
+
+        using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        var responseBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new VaultOperationException(
+                $"Vault returned {(int)response.StatusCode} for {method.Method} {trimmedPath}: {responseBody}",
+                (int)response.StatusCode,
+                responseBody,
+                trimmedPath);
+        }
+
+        if (string.IsNullOrWhiteSpace(responseBody))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<TResponse>(responseBody, RawJsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            throw new VaultOperationException(
+                $"Failed to deserialize Vault response for {method.Method} {trimmedPath}: {ex.Message}",
+                (int)response.StatusCode,
+                responseBody,
+                trimmedPath);
+        }
+    }
+
+    private HttpClient GetRawHttpClient()
+    {
+        if (_rawHttpClient != null)
+        {
+            return _rawHttpClient;
+        }
+
+        lock (_rawHttpClientLock)
+        {
+            if (_rawHttpClient != null)
+            {
+                return _rawHttpClient;
+            }
+
+            HttpMessageHandler handler;
+            if (_options.SkipCertificateValidation)
+            {
+                handler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+                };
+            }
+            else
+            {
+                handler = new HttpClientHandler();
+            }
+
+            _rawHttpClient = new HttpClient(handler, disposeHandler: true);
+            _rawHttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            return _rawHttpClient;
+        }
+    }
+
+    private static async Task<string?> GetVaultTokenAsync(VaultSharp.IVaultClient client)
+    {
+        // Resolve the Vault token used for authentication, honouring the underlying
+        // VaultSharp AuthMethodInfo. We must NOT pass the external IVaultClient to
+        // AuthMethodInfo.GetVaultTokenAsync — that method expects VaultSharp's internal
+        // Polymath. Doing so silently returns a null token, which then breaks the raw
+        // HTTP escape hatch (Transit certificate chain / serial operations).
+        var settings = client.Settings;
+        var authInfo = settings?.AuthMethodInfo;
+        if (authInfo is null)
+        {
+            return null;
+        }
+
+        // Strategy A: Token-based auth — the configured token is exposed as a public
+        // string property (VaultToken). This is the common path for local/dev and for
+        // production setups that inject a Vault token directly.
+        if (authInfo is TokenAuthMethodInfo tokenInfo && !string.IsNullOrEmpty(tokenInfo.VaultToken))
+        {
+            return tokenInfo.VaultToken;
+        }
+
+        // Strategy B: Any other AuthMethodInfo subtype that surfaces the token via a
+        // public instance string property named "VaultToken" (defensive fallback for
+        // VaultSharp evolution across versions).
+        var vaultTokenProp = authInfo.GetType().GetProperty(
+            "VaultToken",
+            BindingFlags.Public | BindingFlags.Instance);
+        if (vaultTokenProp is not null && vaultTokenProp.PropertyType == typeof(string))
+        {
+            if (vaultTokenProp.GetValue(authInfo) is string propToken && !string.IsNullOrEmpty(propToken))
+            {
+                return propToken;
+            }
+        }
+
+        // Strategy C: Fallback — reach into VaultSharp's internal Polymath on the
+        // VaultClient implementation and invoke AuthMethodInfo.GetVaultTokenAsync with
+        // the correct argument type. Uses reflection to stay forward-compatible.
+        var polymath = GetPolymath(client);
+        if (polymath is not null)
+        {
+            var method = authInfo.GetType().GetMethod(
+                "GetVaultTokenAsync",
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+            if (method is not null)
+            {
+                var parameters = method.GetParameters();
+                if (parameters.Length == 1 && parameters[0].ParameterType.IsInstanceOfType(polymath))
+                {
+                    var result = method.Invoke(authInfo, new[] { polymath });
+                    if (result is Task<string> tokenTask)
+                    {
+                        return await tokenTask.ConfigureAwait(false);
+                    }
+
+                    if (result is Task task)
+                    {
+                        await task.ConfigureAwait(false);
+                        var resultProperty = task.GetType().GetProperty("Result");
+                        return resultProperty?.GetValue(task) as string;
+                    }
+
+                    return result as string;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static object? GetPolymath(VaultSharp.IVaultClient client)
+    {
+        // VaultSharp.VaultClient stores its internal Polymath in a private field.
+        // Walk the type hierarchy looking for a field or property named "_polymath"
+        // or "Polymath" — field names have changed across VaultSharp versions.
+        var type = client.GetType();
+        while (type is not null)
+        {
+            var field = type.GetField(
+                "_polymath",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            if (field is not null)
+            {
+                return field.GetValue(client);
+            }
+
+            var prop = type.GetProperty(
+                "Polymath",
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            if (prop is not null)
+            {
+                return prop.GetValue(client);
+            }
+
+            type = type.BaseType;
+        }
+
+        return null;
+    }
+
     private VaultSharp.IVaultClient GetOrCreateClient()
     {
         if (_underlyingClient != null)
@@ -376,5 +599,7 @@ public sealed class VaultClientWrapper : Abstractions.IVaultClient, IDisposable
         _underlyingClient = null;
         _currentToken = null;
         _authenticationVerified = false;
+        _rawHttpClient?.Dispose();
+        _rawHttpClient = null;
     }
 }

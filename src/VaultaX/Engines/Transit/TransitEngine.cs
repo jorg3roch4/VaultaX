@@ -1,8 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Net.Http;
+using System.Numerics;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using VaultaX.Engines.Transit.Models;
 using VaultaX.Exceptions;
 using VaultSharpTransit = VaultSharp.V1.SecretsEngines.Transit;
 
@@ -148,6 +154,10 @@ public sealed class TransitEngine : Abstractions.ITransitEngine
             {
                 signOptions.MarshalingAlgorithm = MapMarshalingAlgorithm(request.MarshalingAlgorithm.Value);
             }
+
+            // Note: VaultSharp 1.17.5.1 does not expose a salt_length property on SignRequestOptions,
+            // so TransitSignRequest.SaltLength is currently not forwarded. Adding raw-HTTP-based signing
+            // to honor SaltLength is out of scope for this change.
 
             var result = await client.V1.Secrets.Transit.SignDataAsync(
                 keyName: request.KeyName,
@@ -347,6 +357,22 @@ public sealed class TransitEngine : Abstractions.ITransitEngine
             if (result?.Data == null)
                 return null;
 
+            string? certificateChain = null;
+            try
+            {
+                var raw = await _vaultClient.SendRawRequestAsync<TransitKeyReadResponse>(
+                    HttpMethod.Get,
+                    $"{_mountPoint}/keys/{keyName}",
+                    body: null,
+                    cancellationToken).ConfigureAwait(false);
+                certificateChain = raw?.Data?.CertificateChain;
+            }
+            catch (VaultOperationException ex)
+            {
+                // Non-fatal — fall back to the core KeyInfo without the certificate chain.
+                _logger?.LogDebug(ex, "Could not read certificate_chain for {KeyName} (status {Status})", keyName, ex.StatusCode);
+            }
+
             return new Abstractions.TransitKeyInfo
             {
                 Name = result.Data.Name,
@@ -356,7 +382,8 @@ public sealed class TransitEngine : Abstractions.ITransitEngine
                 MinEncryptionVersion = result.Data.MinimumEncryptionVersion,
                 SupportsDrivation = result.Data.SupportsDerivation,
                 Exportable = result.Data.Exportable,
-                DeletionAllowed = result.Data.DeletionAllowed
+                DeletionAllowed = result.Data.DeletionAllowed,
+                CertificateChain = certificateChain
             };
         }
         catch (VaultSharp.Core.VaultApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
@@ -369,6 +396,141 @@ public sealed class TransitEngine : Abstractions.ITransitEngine
             throw new VaultTransitException($"Failed to get key info: {ex.Message}", "read-key", keyName, ex);
         }
     }
+
+    /// <inheritdoc />
+    public async Task SetCertificateChainAsync(
+        string keyName,
+        string pemCertificateChain,
+        int? keyVersion = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(keyName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(pemCertificateChain);
+
+        _logger?.LogDebug("Setting certificate chain on Transit key {KeyName}, version: {Version}", keyName, keyVersion);
+
+        try
+        {
+            object body = keyVersion.HasValue
+                ? new { certificate_chain = pemCertificateChain, version = keyVersion.Value }
+                : new { certificate_chain = pemCertificateChain };
+
+            await _vaultClient.SendRawRequestAsync<TransitRawVoidResponse>(
+                HttpMethod.Post,
+                $"{_mountPoint}/keys/{keyName}/set-certificate",
+                body,
+                cancellationToken).ConfigureAwait(false);
+
+            _logger?.LogInformation("Certificate chain associated with Transit key {KeyName}", keyName);
+        }
+        catch (VaultTransitException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to set certificate chain on {KeyName}", keyName);
+            throw new VaultTransitException(
+                $"Failed to set certificate chain: {ex.Message}",
+                "set-certificate",
+                keyName,
+                ex);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<string?> GetCertificateChainAsync(
+        string keyName,
+        int? version = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(keyName);
+
+        _logger?.LogDebug("Reading certificate chain for Transit key {KeyName}, version: {Version}", keyName, version);
+
+        try
+        {
+            var path = version.HasValue
+                ? $"{_mountPoint}/export/certificate-chain/{keyName}/{version.Value.ToString(CultureInfo.InvariantCulture)}"
+                : $"{_mountPoint}/export/certificate-chain/{keyName}";
+
+            var response = await _vaultClient.SendRawRequestAsync<TransitExportCertResponse>(
+                HttpMethod.Get,
+                path,
+                body: null,
+                cancellationToken).ConfigureAwait(false);
+
+            var keys = response?.Data?.Keys;
+            if (keys is null || keys.Count == 0)
+            {
+                return null;
+            }
+
+            // If a version was requested, prefer that entry; otherwise take the highest-numbered entry.
+            if (version.HasValue)
+            {
+                var versionKey = version.Value.ToString(CultureInfo.InvariantCulture);
+                return keys.TryGetValue(versionKey, out var pem) && !string.IsNullOrWhiteSpace(pem) ? pem : null;
+            }
+
+            var latest = keys
+                .Select(kvp => (HasInt: int.TryParse(kvp.Key, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v), V: v, Key: kvp.Key, Value: kvp.Value))
+                .OrderByDescending(x => x.HasInt ? x.V : int.MinValue)
+                .First();
+
+            return string.IsNullOrWhiteSpace(latest.Value) ? null : latest.Value;
+        }
+        catch (VaultOperationException ex)
+        {
+            _logger?.LogError(ex, "Failed to read certificate chain for {KeyName}", keyName);
+            throw new VaultTransitException(
+                $"Failed to read certificate chain: {ex.Message}",
+                "get-certificate-chain",
+                keyName,
+                ex);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<string?> GetCertificateSerialAsync(
+        string keyName,
+        int? version = null,
+        Abstractions.SerialFormat format = Abstractions.SerialFormat.Decimal,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(keyName);
+
+        var pem = await GetCertificateChainAsync(keyName, version, cancellationToken).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(pem))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var cert = X509Certificate2.CreateFromPem(pem);
+
+            if (format == Abstractions.SerialFormat.Hex)
+            {
+                return cert.SerialNumber;
+            }
+
+            // SerialNumberBytes returns the serial in big-endian order (spec-correct).
+            var serialBytes = cert.SerialNumberBytes.Span;
+            var bigInt = new BigInteger(serialBytes, isUnsigned: true, isBigEndian: true);
+            return bigInt.ToString(CultureInfo.InvariantCulture);
+        }
+        catch (Exception ex) when (ex is not VaultTransitException)
+        {
+            _logger?.LogError(ex, "Failed to parse certificate for key {KeyName}", keyName);
+            throw new VaultTransitException(
+                $"Failed to parse certificate PEM: {ex.Message}",
+                "get-certificate-serial",
+                keyName,
+                ex);
+        }
+    }
+
 
     /// <inheritdoc />
     public async Task<string> RewrapAsync(

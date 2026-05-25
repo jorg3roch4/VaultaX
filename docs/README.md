@@ -1,25 +1,27 @@
 # VaultaX Documentation
 
-Documentación completa para VaultaX - Biblioteca .NET para integración con HashiCorp Vault.
+Complete documentation for VaultaX — .NET library for HashiCorp Vault integration.
 
-## Contenido
+## Guides
 
-1. [Inicio Rápido](getting-started.md) - Configuración básica y primer uso
-2. [Configuración](configuration.md) - Todas las opciones de configuración
-3. [Autenticación](authentication.md) - Métodos de autenticación soportados
-4. [Secret Engines](secret-engines.md) - KV, Transit y PKI
-5. [Firma Digital](signing.md) - Guía completa para firma de documentos
-6. [Hot Reload](hot-reload.md) - Recarga automática de secretos
-7. [Health Checks](health-checks.md) - Monitoreo de salud
-8. [Ejemplos](examples.md) - Casos de uso comunes
-9. [Migración](migration.md) - Migrar desde implementaciones existentes
-10. [Troubleshooting](troubleshooting.md) - Solución de problemas
+| # | Guide | Description |
+|---|-------|-------------|
+| 01 | [Getting Started](guides/01-getting-started.md) | Basic setup and first use |
+| 02 | [Configuration](guides/02-configuration.md) | All configuration options |
+| 03 | [Authentication](guides/03-authentication.md) | Supported authentication methods |
+| 04 | [Secret Engines](guides/04-secret-engines.md) | KV, Transit, and PKI engines |
+| 05 | [Signing](guides/05-signing.md) | Complete guide for document signing |
+| 06 | [Hot Reload](guides/06-hot-reload.md) | Automatic secret reloading |
+| 07 | [Health Checks](guides/07-health-checks.md) | Health monitoring |
+| 08 | [Examples](guides/08-examples.md) | Common use cases |
+| 09 | [Migration](guides/09-migration.md) | Migrating from existing implementations |
+| 10 | [Troubleshooting](guides/10-troubleshooting.md) | Problem solving |
 
-## Arquitectura
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Tu Aplicación                            │
+│                        Your Application                         │
 ├─────────────────────────────────────────────────────────────────┤
 │  IConfiguration  │  IKeyValueEngine  │  ITransitEngine  │  ... │
 ├─────────────────────────────────────────────────────────────────┤
@@ -38,24 +40,24 @@ Documentación completa para VaultaX - Biblioteca .NET para integración con Has
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Características Principales
+## Key Features
 
-| Característica | Descripción |
-|---------------|-------------|
-| Configuración Transparente | Secretos de Vault sobrescriben valores de appsettings.json |
-| 12 Métodos de Auth | Token, AppRole, Kubernetes, LDAP, JWT, AWS, Azure, etc. |
-| Hot Reload | Recarga automática cuando los secretos cambian |
-| Token Renewal | Renovación automática de tokens antes de expirar |
-| Health Checks | Integración nativa con ASP.NET Core |
-| Transit Engine | Firma y cifrado sin exponer llaves privadas |
-| PKI Engine | Emisión y gestión de certificados |
+| Feature | Description |
+|---------|-------------|
+| Transparent Configuration | Vault secrets override appsettings.json values |
+| 12 Auth Methods | Token, AppRole, Kubernetes, LDAP, JWT, AWS, Azure, etc. |
+| Hot Reload | Automatic reload when secrets change |
+| Token Renewal | Automatic token renewal before expiry |
+| Health Checks | Native ASP.NET Core integration |
+| Transit Engine | Signing and encryption without exposing private keys |
+| PKI Engine | Certificate issuance and management |
 
-## Requisitos
+## Requirements
 
-- .NET 8.0 o superior
-- HashiCorp Vault 1.12 o superior
+- .NET 10.0 or later
+- HashiCorp Vault 1.12 or later
 - VaultSharp 1.17.x
 
-## Licencia
+## License
 
 Apache 2.0

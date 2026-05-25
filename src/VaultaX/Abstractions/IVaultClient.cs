@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -93,6 +94,25 @@ public interface IVaultClient
     /// Use this for operations not covered by the high-level API.
     /// </summary>
     VaultSharp.IVaultClient GetUnderlyingClient();
+
+    /// <summary>
+    /// Sends a raw HTTP request to Vault for endpoints not covered by VaultSharp.
+    /// The current Vault token is automatically attached via the <c>X-Vault-Token</c> header.
+    /// Responses with HTTP 404 are translated to <c>null</c>; other non-success status codes throw
+    /// <see cref="Exceptions.VaultOperationException"/>.
+    /// </summary>
+    /// <typeparam name="TResponse">Type to deserialize the JSON response body into.</typeparam>
+    /// <param name="method">HTTP method (e.g., <see cref="HttpMethod.Get"/>, <see cref="HttpMethod.Post"/>).</param>
+    /// <param name="relativePath">Vault path relative to the <c>/v1/</c> prefix (e.g., <c>"transit/keys/foo/set-certificate"</c>).</param>
+    /// <param name="body">Optional request body — serialized to JSON. Use <c>null</c> for methods without a body.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The deserialized response body, or <c>null</c> when Vault returned 404.</returns>
+    Task<TResponse?> SendRawRequestAsync<TResponse>(
+        HttpMethod method,
+        string relativePath,
+        object? body = null,
+        CancellationToken cancellationToken = default)
+        where TResponse : class;
 }
 
 /// <summary>

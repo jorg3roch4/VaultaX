@@ -44,10 +44,14 @@ Of course, there's absolutely no obligation. If you prefer, simply starring the 
 
 ---
 
-## 🎉 What's New in 1.0.2
+## 🎉 What's New in 1.1.0
 
-- **Eager authentication** for DI-registered `IVaultClient` - `IsAuthenticated` is now `true` immediately after resolving from DI
-- Fixed `IsAuthenticated` returning `false` on fresh DI client instances
+- **Transit certificate chain support** — associate X.509 certificate chains with Transit signing keys and retrieve the end-entity serial at signing time. Designed for regulatory signing flows (e.g., STP/Banxico) that require the cert serial to travel alongside the Vault-produced signature.
+  - `ITransitEngine.SetCertificateChainAsync(keyName, pem, keyVersion?)`
+  - `ITransitEngine.GetCertificateChainAsync(keyName, version?)` → PEM string or `null`
+  - `ITransitEngine.GetCertificateSerialAsync(keyName, version?, SerialFormat.Decimal | SerialFormat.Hex)`
+  - `TransitKeyInfo.CertificateChain` — populated automatically by `GetKeyInfoAsync`
+- **Raw HTTP escape hatch** — `IVaultClient.SendRawRequestAsync<TResponse>(method, relativePath, body?)` for Vault endpoints not covered by VaultSharp. 404 → `null`; other non-success → `VaultOperationException`.
 
 [See the full changelog](CHANGELOG.md) for details.
 
@@ -144,8 +148,8 @@ public class DocumentSigningService(ITransitEngine transitEngine)
         var response = await transitEngine.SignAsync(new TransitSignRequest
         {
             KeyName = "document-signing-key",
-            Input = documentHash,
-            HashAlgorithm = "sha2-256",
+            Data = documentHash,
+            HashAlgorithm = TransitHashAlgorithm.Sha256,
             Prehashed = true
         });
         return response.Signature;
@@ -158,6 +162,26 @@ public class DocumentSigningService(ITransitEngine transitEngine)
     }
 }
 ```
+
+#### Certificate Chain Support (v1.1.0+)
+
+When your signing flow needs to expose the X.509 serial of the cert associated with the Transit key (e.g., Banxico/STP requires the serial alongside every signed payment), associate the PEM chain once and read the serial at signing time:
+
+```csharp
+// Associate the cert chain with the key (one-time setup, or after each key rotation)
+await transitEngine.SetCertificateChainAsync(
+    keyName: "document-signing-key",
+    pemCertificateChain: pemChain);
+
+// At signing time — resolve the serial dynamically
+var signResponse = await transitEngine.SignAsync(signRequest);
+var certSerial = await transitEngine.GetCertificateSerialAsync(
+    keyName: "document-signing-key",
+    version: signResponse.KeyVersion,
+    format: SerialFormat.Decimal); // "Hex" also available
+```
+
+Returns `null` if no certificate has been associated with the key (or Vault is older than 1.16). Consider caching the serial per `(keyName, keyVersion)` — it only changes when the key is rotated.
 
 ### PKI Engine (Certificates)
 

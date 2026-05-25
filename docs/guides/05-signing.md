@@ -226,6 +226,66 @@ public record SpeiSignedMessage
 }
 ```
 
+### Asociar un certificado a la llave y obtener el serial (v1.1.0+)
+
+En flujos regulatorios (STP/Banxico, SAT, etc.) es común necesitar el **número de serie del certificado X.509** asociado a la llave de firma para incluirlo junto con la firma. Desde v1.1.0, VaultaX expone tres métodos en `ITransitEngine` para gestionar el certificate chain del Transit key:
+
+```csharp
+// 1. Asociar el PEM chain con la llave (una sola vez, o tras cada rotación)
+await _transit.SetCertificateChainAsync(
+    keyName: "document-signing",
+    pemCertificateChain: pemChain); // Puede incluir end-entity + intermediates
+
+// 2. Leer el PEM chain (para inspección o auditoría)
+string? pem = await _transit.GetCertificateChainAsync("document-signing");
+
+// 3. Obtener el número de serie del certificado end-entity
+string? serialDecimal = await _transit.GetCertificateSerialAsync(
+    keyName: "document-signing",
+    version: null,                 // null = última versión
+    format: SerialFormat.Decimal); // ideal para STP/Banxico
+
+string? serialHex = await _transit.GetCertificateSerialAsync(
+    "document-signing",
+    format: SerialFormat.Hex);     // hex uppercase sin separadores
+```
+
+**Integración con la firma**:
+
+```csharp
+public async Task<SignedPaymentResult> SignPaymentWithSerialAsync(byte[] paymentData)
+{
+    var signResponse = await _transit.SignAsync(new TransitSignRequest
+    {
+        KeyName = "document-signing",
+        Data = paymentData,
+        HashAlgorithm = TransitHashAlgorithm.Sha256,
+        SignatureAlgorithm = TransitSignatureAlgorithm.Pkcs1v15
+    });
+
+    // Resolver el serial en la MISMA versión de la llave que firmó
+    var serial = await _transit.GetCertificateSerialAsync(
+        "document-signing",
+        version: signResponse.KeyVersion,
+        format: SerialFormat.Decimal);
+
+    return new SignedPaymentResult
+    {
+        Signature = signResponse.Signature,
+        KeyVersion = signResponse.KeyVersion,
+        CertificateSerial = serial
+    };
+}
+```
+
+**Detalles importantes**:
+
+- `GetCertificateSerialAsync` devuelve `null` si la llave no tiene certificado asociado (también si Vault es anterior a 1.16).
+- En un chain con múltiples certificados, solo se extrae el **primero (end-entity)**.
+- El serial decimal se calcula como `BigInteger` sin signo en big-endian — formato requerido por STP.
+- Considerar cachear el serial por `(keyName, keyVersion)`: solo cambia cuando rotás la llave.
+- El endpoint usado es `GET /transit/export/certificate-chain/:name(/:version)` y requiere política Vault `capabilities = ["read"]` sobre ese path.
+
 ### Firma con datos pre-hasheados
 
 Cuando ya tienes el hash del documento (útil para documentos grandes):

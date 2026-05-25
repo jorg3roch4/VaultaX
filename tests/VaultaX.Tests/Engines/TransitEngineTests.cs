@@ -1,10 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using VaultaX.Abstractions;
 using VaultaX.Engines.Transit;
+using VaultaX.Engines.Transit.Models;
 using VaultaX.Exceptions;
 using VaultaX.Tests.Helpers;
 using VaultSharp.V1.Commons;
@@ -461,5 +467,316 @@ public class TransitEngineTests
 
         // Assert
         result.Should().Be("vault:v2:newcipher");
+    }
+
+    // ==================== Certificate Chain Support (v1.1.0) ====================
+
+    private const string SamplePem = "-----BEGIN CERTIFICATE-----\nMIIDAzCCAeugAwIBAgI=\n-----END CERTIFICATE-----\n";
+
+    private static X509Certificate2 CreateSelfSignedCert(byte[] serialBytes)
+    {
+        using var rsa = RSA.Create(2048);
+        var req = new CertificateRequest("CN=vaultax-test", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var notBefore = DateTimeOffset.UtcNow.AddMinutes(-5);
+        var notAfter = notBefore.AddHours(1);
+        return req.Create(
+            new X500DistinguishedName("CN=vaultax-test"),
+            X509SignatureGenerator.CreateForRSA(rsa, RSASignaturePadding.Pkcs1),
+            notBefore,
+            notAfter,
+            serialBytes);
+    }
+
+    private static string ExportCertPem(X509Certificate2 cert) => cert.ExportCertificatePem();
+
+    [Fact]
+    public async Task SetCertificateChainAsync_Success_SendsExpectedRequest()
+    {
+        // Arrange
+        HttpMethod? capturedMethod = null;
+        string? capturedPath = null;
+        object? capturedBody = null;
+
+        _mockClient
+            .Setup(c => c.SendRawRequestAsync<TransitRawVoidResponse>(
+                It.IsAny<HttpMethod>(),
+                It.IsAny<string>(),
+                It.IsAny<object?>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<HttpMethod, string, object?, CancellationToken>((m, p, b, _) =>
+            {
+                capturedMethod = m;
+                capturedPath = p;
+                capturedBody = b;
+            })
+            .ReturnsAsync((TransitRawVoidResponse?)null);
+
+        var engine = CreateEngine();
+
+        // Act
+        await engine.SetCertificateChainAsync("payments-signing", SamplePem, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Assert
+        capturedMethod.Should().Be(HttpMethod.Post);
+        capturedPath.Should().Be("transit/keys/payments-signing/set-certificate");
+        capturedBody.Should().NotBeNull();
+        capturedBody!.GetType().GetProperty("certificate_chain")!.GetValue(capturedBody)
+            .Should().Be(SamplePem);
+    }
+
+    [Fact]
+    public async Task SetCertificateChainAsync_WithKeyVersion_IncludesVersionInBody()
+    {
+        // Arrange
+        object? capturedBody = null;
+
+        _mockClient
+            .Setup(c => c.SendRawRequestAsync<TransitRawVoidResponse>(
+                It.IsAny<HttpMethod>(),
+                It.IsAny<string>(),
+                It.IsAny<object?>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<HttpMethod, string, object?, CancellationToken>((_, _, b, _) => capturedBody = b)
+            .ReturnsAsync((TransitRawVoidResponse?)null);
+
+        var engine = CreateEngine();
+
+        // Act
+        await engine.SetCertificateChainAsync("payments-signing", SamplePem, keyVersion: 3,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        // Assert
+        capturedBody.Should().NotBeNull();
+        var type = capturedBody!.GetType();
+        type.GetProperty("certificate_chain")!.GetValue(capturedBody).Should().Be(SamplePem);
+        type.GetProperty("version")!.GetValue(capturedBody).Should().Be(3);
+    }
+
+    [Theory]
+    [InlineData(null, "pem")]
+    [InlineData("", "pem")]
+    [InlineData("  ", "pem")]
+    [InlineData("key", null)]
+    [InlineData("key", "")]
+    public async Task SetCertificateChainAsync_InvalidArgs_Throws(string? keyName, string? pem)
+    {
+        var engine = CreateEngine();
+        var act = async () => await engine.SetCertificateChainAsync(keyName!, pem!,
+            cancellationToken: TestContext.Current.CancellationToken);
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Fact]
+    public async Task GetCertificateChainAsync_Success_ReturnsLatestPem()
+    {
+        // Arrange
+        var response = new TransitExportCertResponse
+        {
+            Data = new TransitExportCertData
+            {
+                Keys = new Dictionary<string, string>
+                {
+                    ["1"] = "old-pem",
+                    ["2"] = SamplePem
+                }
+            }
+        };
+
+        _mockClient
+            .Setup(c => c.SendRawRequestAsync<TransitExportCertResponse>(
+                HttpMethod.Get,
+                "transit/export/certificate-chain/payments-signing",
+                null,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+
+        var engine = CreateEngine();
+
+        // Act
+        var result = await engine.GetCertificateChainAsync("payments-signing",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Should().Be(SamplePem);
+    }
+
+    [Fact]
+    public async Task GetCertificateChainAsync_SpecificVersion_CallsVersionedPath()
+    {
+        // Arrange
+        var response = new TransitExportCertResponse
+        {
+            Data = new TransitExportCertData
+            {
+                Keys = new Dictionary<string, string> { ["2"] = SamplePem }
+            }
+        };
+
+        _mockClient
+            .Setup(c => c.SendRawRequestAsync<TransitExportCertResponse>(
+                HttpMethod.Get,
+                "transit/export/certificate-chain/payments-signing/2",
+                null,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+
+        var engine = CreateEngine();
+
+        // Act
+        var result = await engine.GetCertificateChainAsync("payments-signing", version: 2,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Should().Be(SamplePem);
+    }
+
+    [Fact]
+    public async Task GetCertificateChainAsync_NotFound_ReturnsNull()
+    {
+        // Arrange
+        _mockClient
+            .Setup(c => c.SendRawRequestAsync<TransitExportCertResponse>(
+                It.IsAny<HttpMethod>(),
+                It.IsAny<string>(),
+                It.IsAny<object?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TransitExportCertResponse?)null);
+
+        var engine = CreateEngine();
+
+        // Act
+        var result = await engine.GetCertificateChainAsync("payments-signing",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetCertificateChainAsync_EmptyKeysMap_ReturnsNull()
+    {
+        // Arrange
+        _mockClient
+            .Setup(c => c.SendRawRequestAsync<TransitExportCertResponse>(
+                It.IsAny<HttpMethod>(),
+                It.IsAny<string>(),
+                It.IsAny<object?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TransitExportCertResponse { Data = new TransitExportCertData { Keys = new Dictionary<string, string>() } });
+
+        var engine = CreateEngine();
+
+        // Act
+        var result = await engine.GetCertificateChainAsync("payments-signing",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetCertificateSerialAsync_Decimal_ReturnsBigIntegerString()
+    {
+        // Arrange — serial 0x0102030405 (big-endian) = 4328719365 decimal
+        var serial = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
+        using var cert = CreateSelfSignedCert(serial);
+        var pem = ExportCertPem(cert);
+
+        _mockClient
+            .Setup(c => c.SendRawRequestAsync<TransitExportCertResponse>(
+                It.IsAny<HttpMethod>(),
+                It.IsAny<string>(),
+                It.IsAny<object?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TransitExportCertResponse
+            {
+                Data = new TransitExportCertData { Keys = new Dictionary<string, string> { ["1"] = pem } }
+            });
+
+        var engine = CreateEngine();
+
+        // Act
+        var result = await engine.GetCertificateSerialAsync("payments-signing",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Should().Be("4328719365");
+    }
+
+    [Fact]
+    public async Task GetCertificateSerialAsync_Hex_ReturnsUppercaseHex()
+    {
+        // Arrange — first byte < 0x80 to avoid ASN.1 DER sign-padding ("00" prefix).
+        var serial = new byte[] { 0x12, 0xAB, 0xCD, 0xEF };
+        using var cert = CreateSelfSignedCert(serial);
+        var pem = ExportCertPem(cert);
+
+        _mockClient
+            .Setup(c => c.SendRawRequestAsync<TransitExportCertResponse>(
+                It.IsAny<HttpMethod>(),
+                It.IsAny<string>(),
+                It.IsAny<object?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TransitExportCertResponse
+            {
+                Data = new TransitExportCertData { Keys = new Dictionary<string, string> { ["1"] = pem } }
+            });
+
+        var engine = CreateEngine();
+
+        // Act
+        var result = await engine.GetCertificateSerialAsync("payments-signing", format: SerialFormat.Hex,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Should().Be("12ABCDEF");
+    }
+
+    [Fact]
+    public async Task GetCertificateSerialAsync_NoCertificate_ReturnsNull()
+    {
+        // Arrange
+        _mockClient
+            .Setup(c => c.SendRawRequestAsync<TransitExportCertResponse>(
+                It.IsAny<HttpMethod>(),
+                It.IsAny<string>(),
+                It.IsAny<object?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TransitExportCertResponse?)null);
+
+        var engine = CreateEngine();
+
+        // Act
+        var result = await engine.GetCertificateSerialAsync("payments-signing",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetCertificateSerialAsync_MalformedPem_Throws()
+    {
+        // Arrange
+        _mockClient
+            .Setup(c => c.SendRawRequestAsync<TransitExportCertResponse>(
+                It.IsAny<HttpMethod>(),
+                It.IsAny<string>(),
+                It.IsAny<object?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TransitExportCertResponse
+            {
+                Data = new TransitExportCertData { Keys = new Dictionary<string, string> { ["1"] = "not-a-real-pem" } }
+            });
+
+        var engine = CreateEngine();
+
+        // Act
+        var act = async () => await engine.GetCertificateSerialAsync("payments-signing",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        // Assert
+        var ex = await act.Should().ThrowAsync<VaultTransitException>();
+        ex.Which.Operation.Should().Be("get-certificate-serial");
     }
 }

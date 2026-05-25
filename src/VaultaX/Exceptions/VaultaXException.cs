@@ -275,6 +275,52 @@ public class VaultTransitException : VaultaXException
 }
 
 /// <summary>
+/// Exception thrown when a raw Vault HTTP operation returns a non-success status
+/// (excluding 404, which is translated to a null result by the raw helper).
+/// </summary>
+public class VaultOperationException : VaultaXException
+{
+    /// <summary>
+    /// The HTTP status code returned by Vault.
+    /// </summary>
+    public int StatusCode { get; }
+
+    /// <summary>
+    /// The raw response body returned by Vault (may be empty).
+    /// </summary>
+    public string? ResponseBody { get; }
+
+    /// <summary>
+    /// The relative Vault API path that was requested.
+    /// </summary>
+    public string? Path { get; }
+
+    /// <summary>
+    /// Creates a new raw operation exception.
+    /// </summary>
+    public VaultOperationException(string message) : base(message)
+    {
+    }
+
+    /// <summary>
+    /// Creates a new raw operation exception with HTTP details.
+    /// </summary>
+    public VaultOperationException(string message, int statusCode, string? responseBody, string? path) : base(message)
+    {
+        StatusCode = statusCode;
+        ResponseBody = responseBody;
+        Path = path;
+    }
+
+    /// <summary>
+    /// Creates a new raw operation exception with an inner exception.
+    /// </summary>
+    public VaultOperationException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+}
+
+/// <summary>
 /// Exception thrown when a PKI engine operation fails.
 /// </summary>
 public class VaultPkiException : VaultaXException

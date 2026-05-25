@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
@@ -229,5 +231,79 @@ public class VaultClientWrapperTests
 
         // Assert - the wrapper was created successfully with a base path
         wrapper.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetVaultTokenAsync_WithTokenAuthMethodInfo_ReturnsConfiguredToken()
+    {
+        // Arrange — configure Token auth with a known token. TokenAuthMethod reads
+        // the option via GetRequiredEnvVar, which also accepts literal "static:" prefixed
+        // values for tests.
+        const string ExpectedToken = "hvs.test-token";
+        var options = CreateValidOptions(o =>
+        {
+            o.Authentication = new AuthenticationOptions
+            {
+                Method = "Token",
+                Token = $"static:{ExpectedToken}"
+            };
+        });
+        using var wrapper = new VaultClientWrapper(options);
+        var client = wrapper.GetUnderlyingClient();
+
+        // Act — invoke the private static GetVaultTokenAsync through reflection so we
+        // exercise the exact code path used by SendRawRequestAsync.
+        var method = typeof(VaultClientWrapper).GetMethod(
+            "GetVaultTokenAsync",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        method.Should().NotBeNull("GetVaultTokenAsync is the private helper under test");
+
+        var invocation = method!.Invoke(null, new object?[] { client });
+        invocation.Should().BeOfType<Task<string?>>();
+        var token = await (Task<string?>)invocation!;
+
+        // Assert — the configured token is surfaced so the X-Vault-Token header gets set.
+        token.Should().Be(ExpectedToken);
+    }
+
+    [Fact]
+    public async Task SendRawRequestAsync_WithoutAuth_ThrowsVaultOperationException()
+    {
+        // Arrange — build a wrapper, then swap its internal VaultClient for one whose
+        // TokenAuthMethodInfo has an empty VaultToken. VaultSharp's constructor rejects
+        // empty strings, so we build it with a placeholder and then blank the backing
+        // field via reflection. This exercises the real SendRawRequestAsync guard
+        // without hitting the network.
+        var options = CreateValidOptions();
+        using var wrapper = new VaultClientWrapper(options);
+
+        var placeholderTokenInfo = new VaultSharp.V1.AuthMethods.Token.TokenAuthMethodInfo("placeholder");
+        var settings = new VaultSharp.VaultClientSettings(options.Address, placeholderTokenInfo)
+        {
+            UseVaultTokenHeaderInsteadOfAuthorizationHeader = false
+        };
+        var emptyAuthClient = new VaultSharp.VaultClient(settings);
+
+        // After the client is built (which validates the token is non-empty), blank the
+        // backing field so GetVaultTokenAsync sees an empty VaultToken.
+        var vaultTokenBacking = typeof(VaultSharp.V1.AuthMethods.Token.TokenAuthMethodInfo)
+            .GetField("<VaultToken>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance);
+        vaultTokenBacking.Should().NotBeNull("TokenAuthMethodInfo.VaultToken is an auto-property");
+        vaultTokenBacking!.SetValue(placeholderTokenInfo, string.Empty);
+
+        var clientField = typeof(VaultClientWrapper).GetField(
+            "_underlyingClient",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+        clientField.Should().NotBeNull("the wrapper exposes its underlying client as _underlyingClient");
+        clientField!.SetValue(wrapper, emptyAuthClient);
+
+        // Act
+        var action = () => wrapper.SendRawRequestAsync<Dictionary<string, object?>>(
+            HttpMethod.Get,
+            "transit/keys/test");
+
+        // Assert — the guard fires before any network call.
+        await action.Should().ThrowAsync<VaultOperationException>()
+            .WithMessage("*Could not obtain a Vault token*");
     }
 }

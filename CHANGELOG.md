@@ -2,6 +2,21 @@
 
 All notable changes to VaultaX will be documented in this file.
 
+## [1.1.0] - 2026-04-22
+
+### Added
+- **Transit certificate chain support** — three new methods on `ITransitEngine` for associating X.509 certificates with Transit signing keys and retrieving the end-entity serial at signing time. Motivated by regulatory signing flows (e.g., STP/Banxico) that require the cert serial to be embedded alongside the Vault-produced signature.
+  - `SetCertificateChainAsync(keyName, pemCertificateChain, keyVersion?, ct)` — `POST /transit/keys/:name/set-certificate`
+  - `GetCertificateChainAsync(keyName, version?, ct)` — `GET /transit/export/certificate-chain/:name(/:version)`; returns `null` when no certificate is set (or Vault < 1.16)
+  - `GetCertificateSerialAsync(keyName, version?, format, ct)` — parses the first cert in the chain and returns its serial as decimal (default) or uppercase hex
+- **`SerialFormat` enum** (`Hex`, `Decimal`) for serial-number output selection
+- **`TransitKeyInfo.CertificateChain`** — populated from Vault's `certificate_chain` field when calling `GetKeyInfoAsync`
+- **Raw HTTP escape hatch** — `IVaultClient.SendRawRequestAsync<TResponse>(method, relativePath, body?, ct)` for Vault endpoints not covered by VaultSharp. Automatically attaches the current Vault token. 404 → `null`; other non-success → `VaultOperationException`.
+- **`VaultOperationException`** — new exception type for raw-HTTP failures (includes status code, response body, path).
+
+### Notes
+- `TransitSignRequest.SaltLength` continues to be a no-op because VaultSharp 1.17.5.1's `SignRequestOptions` does not expose a salt-length property. Forwarding SaltLength would require replacing the VaultSharp sign path with raw HTTP and is out of scope for 1.1.0.
+
 ## [1.0.2] - 2026-02-20
 
 ### Changed

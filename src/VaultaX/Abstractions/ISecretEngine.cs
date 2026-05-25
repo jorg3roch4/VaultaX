@@ -210,6 +210,52 @@ public interface ITransitEngine : ISecretEngine
         string ciphertext,
         byte[]? context = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Associates a PEM-encoded certificate chain with a Transit key.
+    /// Uses <c>POST /transit/keys/:name/set-certificate</c>. The key's public portion MUST match
+    /// the certificate's subject public key for Vault to accept the association. Requires Vault
+    /// to have been configured with the key already present.
+    /// </summary>
+    /// <param name="keyName">The Transit key name.</param>
+    /// <param name="pemCertificateChain">The full PEM-encoded chain (end-entity first, optional intermediates/root).</param>
+    /// <param name="keyVersion">Optional key version to associate the chain with (defaults to the latest version).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task SetCertificateChainAsync(
+        string keyName,
+        string pemCertificateChain,
+        int? keyVersion = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Exports the PEM-encoded certificate chain associated with a Transit key.
+    /// Uses <c>GET /transit/export/certificate-chain/:name(/:version)</c>. Requires Vault 1.16 or newer —
+    /// older Vault instances will return <c>null</c> because the export type is unknown.
+    /// </summary>
+    /// <param name="keyName">The Transit key name.</param>
+    /// <param name="version">Optional key version (defaults to the latest version).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The PEM certificate chain, or <c>null</c> if no certificate is associated with the key.</returns>
+    Task<string?> GetCertificateChainAsync(
+        string keyName,
+        int? version = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the serial number of the X.509 end-entity certificate associated with a Transit key.
+    /// Internally calls <see cref="GetCertificateChainAsync"/>, parses the first certificate in the PEM
+    /// chain, and extracts the serial number in the requested format.
+    /// </summary>
+    /// <param name="keyName">The Transit key name.</param>
+    /// <param name="version">Optional key version (defaults to the latest version).</param>
+    /// <param name="format">Serial format to return — <see cref="SerialFormat.Decimal"/> (default) or <see cref="SerialFormat.Hex"/>.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The serial number as a string, or <c>null</c> if no certificate is associated with the key.</returns>
+    Task<string?> GetCertificateSerialAsync(
+        string keyName,
+        int? version = null,
+        SerialFormat format = SerialFormat.Decimal,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -451,6 +497,30 @@ public sealed record TransitKeyInfo
     /// Whether deletion is allowed.
     /// </summary>
     public required bool DeletionAllowed { get; init; }
+
+    /// <summary>
+    /// PEM-encoded certificate chain associated with this key, or <c>null</c> if none is set.
+    /// Populated from Vault's <c>certificate_chain</c> field on <c>/transit/keys/:name</c>.
+    /// </summary>
+    public string? CertificateChain { get; init; }
+}
+
+/// <summary>
+/// Output format for certificate serial numbers returned by
+/// <see cref="ITransitEngine.GetCertificateSerialAsync(string, int?, SerialFormat, System.Threading.CancellationToken)"/>.
+/// </summary>
+public enum SerialFormat
+{
+    /// <summary>
+    /// Hexadecimal, uppercase, no separators — as produced by <c>X509Certificate2.SerialNumber</c>.
+    /// </summary>
+    Hex,
+
+    /// <summary>
+    /// Decimal representation of the unsigned big-endian serial number — the format expected by
+    /// STP / Banxico when referencing the certificate used for a digital signature.
+    /// </summary>
+    Decimal
 }
 
 /// <summary>
